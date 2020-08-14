@@ -1,0 +1,141 @@
+.buttonWrapper {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 200px;
+
+  svg {
+    font-size: 1.8rem;
+  }
+}
+
+.newThreadForm {
+  min-width: 720px;
+
+  form {
+    display: grid;
+    grid-template:
+      'title rating' auto
+      'comment comment' auto
+      'actions actions' auto / auto 200px;
+    gap: 3rem;
+  }
+
+  input[type=text],
+  select,
+  textarea {
+    height: 42px;
+    margin-top: 1rem;
+    padding: 0 2rem;
+    border: 0;
+    border-radius: 5px;
+    background-color: #36383c;
+    color: #ffffff;
+    transition: background-color .3s;
+
+    &:active,
+    &:focus {
+      border: 0;
+      outline: 0;
+      background-color: #3b3d41;
+
+      + .suffix {
+        background-color: #3b3d41;
+      }
+    }
+  }
+
+  textarea,
+  input[type=text] {
+    &::placeholder {
+      color: #777777;
+      opacity: 1;
+    }
+  }
+
+  select:-moz-focusring {
+    color: rgba(255, 255, 255, 0);
+    text-shadow: 0 0 0 #ffffff;
+
+    &.isEmpty {
+      color: rgba(255, 255, 255, 0);
+      text-shadow: 0 0 0 #777777;
+    }
+  }
+
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    &.isEmpty {
+      color: #777777;
+    }
+
+    option:first-child {
+      display: none;
+    }
+  }
+
+  textarea {
+    height: 150px;
+    padding: 1rem 2rem;
+    line-height: 1.4;
+    resize: none;
+  }
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+
+  > *:not(label) {
+    width: 100%;
+  }
+
+  &:nth-child(1) {
+    grid-area: title;
+  }
+
+  &:nth-child(2) {
+    grid-area: rating;
+  }
+
+  &:nth-child(3) {
+    grid-area: comment;
+  }
+
+  &:nth-child(4) {
+    grid-area: actions;
+    display: flex;
+    flex-direction: row;
+    width: 300px;
+    margin: 0 -1rem 0 auto;
+
+    button {
+      margin: 0 1rem;
+    }
+  }
+
+  label {
+    display: inline-block;
+    flex: 0;
+  }
+
+  .suffix {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 42px;
+    border-radius: 0 5px 5px 0;
+    background-color: #36383c;
+    transition: background-color .3s;
+  }
+}

@@ -1,0 +1,62 @@
+.modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+
+  &.hasNoPadding {
+    .content {
+      padding: 0;
+    }
+  }
+}
+
+.overlay {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10vh;
+  background-color: rgba(26, 22, 22, .85);
+}
+
+.magicBorder {
+  position: relative;
+  border-radius: .5rem;
+  background-color: #2d2d2d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  animation: slideUp .3s ease forwards;
+  padding: 1px;
+
+  &:after {
+    opacity: .5;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+.content {
+  position: relative;
+  max-width: 840px;
+  max-height: 80vh;
+  margin: 0;
+  padding: 3rem;
+  border: 0;
+  border-radius: inherit;
+  color: #ffffff;
+  overflow: auto;
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translate3d(0, -20px, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}

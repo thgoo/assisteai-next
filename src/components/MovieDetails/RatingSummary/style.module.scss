@@ -1,0 +1,23 @@
+.ratingSummary {
+  justify-content: flex-end;
+  align-items: flex-end;
+  display: flex;
+  text-align: center;
+  margin: 0 -1.5rem;
+
+  .item {
+    margin: 0 1.5rem;
+    padding-bottom: .6rem;
+  }
+
+  .number {
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  .title {
+    margin-top: .5rem;
+    font-size: 1.2rem;
+    opacity: .5;
+  }
+}
