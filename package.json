@@ -14,9 +14,10 @@
     "@fortawesome/pro-solid-svg-icons": "^5.14.0",
     "@fortawesome/react-fontawesome": "^0.1.11",
     "@zeit/next-sass": "^1.0.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.0",
     "formik": "^2.1.4",
     "js-cookie": "^2.2.1",
+    "lodash": "^4.17.20",
     "lodash.debounce": "^4.0.8",
     "next": "9.4.4",
     "next-redux-wrapper": "^6.0.2",
@@ -29,7 +30,7 @@
     "react-tooltip": "^4.2.7",
     "react-transition-group": "^4.4.1",
     "redux": "^4.0.5",
-    "swr": "^0.2.2"
+    "swr": "^0.3.9"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",

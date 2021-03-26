@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 import ReactTooltip from 'react-tooltip';
+import { SWRConfig } from 'swr';
+import api from '../services/api';
 import { wrapper } from '../store';
 import Header from '../components/Header';
 import Toast from '../components/Toast';
@@ -10,7 +12,15 @@ const MyApp = ({ Component, pageProps }) => (
   <main>
     <AuthProvider>
       <Header />
-      <Component {...pageProps} />
+      <SWRConfig
+        value={{
+          dedupingInterval: 2000,
+          fetcher: url => api(url).then(res => res.data),
+        }}
+      >
+
+        <Component {...pageProps} />
+      </SWRConfig>
     </AuthProvider>
     <ReactTooltip effect="solid" uuid="a0ea1713-cb8b-47b9-baac-b54642328e3c" />
     <Toast />

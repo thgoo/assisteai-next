@@ -1,61 +1,53 @@
-import { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { useRouter } from 'next/router';
-import { API_URL } from '../../../config';
+import { debounce } from 'lodash';
+import { useEffect } from 'react';
+import { useSWRInfinite } from 'swr';
 import MovieListComponent from './MovieListComponent';
 
-const scrollOffset = 150; // in pixels
-let blockLoadMore = false;
-const MovieListContainer = ({ firstMovies, ...props }) => {
-  const [movies, setMovies] = useState([...firstMovies]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const router = useRouter();
+const getKey = (pageIndex, previousPageData) => {
+  if (previousPageData && !previousPageData.next_page_url) return null; // reached the end
 
-  const handleClick = (movie) => {
-    window.history.pushState(null, null, `/movies/${movie.id}-${movie.slug}`);
-  };
-
-  useEffect(() => {
-    if (page === 1) return;
-
-    const loadMovies = async () => {
-      try {
-        setIsLoading(true);
-        blockLoadMore = true;
-        const res = await fetch(`${API_URL}/movies?page=${page}`);
-        const { data } = await res.json();
-        setMovies(oldMovies => [...oldMovies, ...data]);
-      } catch {
-        // handle error
-      } finally {
-        blockLoadMore = false;
-        setIsLoading(false);
-      }
-    };
-
-    loadMovies();
-  }, [page]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - scrollOffset
-      ) {
-        console.log('blockLoadMore', blockLoadMore);
-        if (!blockLoadMore) setPage(oldPage => oldPage + 1);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return <MovieListComponent isLoading={isLoading} movies={movies} onClick={handleClick} router={router} {...props} />;
+  return `/movies?page=${pageIndex + 1}`; // SWR key
 };
 
-MovieListContainer.propTypes = {
-  firstMovies: PropTypes.array.isRequired,
+let busy;
+const MovieListContainer = () => {
+  const {
+    data, setSize, isValidating,
+  } = useSWRInfinite(getKey);
+
+  useEffect(() => {
+    busy = isValidating;
+  }, [isValidating]);
+
+  useEffect(() => {
+    const scrollPosition = window.sessionStorage.getItem('scrollPosition');
+    const handleScroll = debounce(() => {
+      if (
+        (
+          window.innerHeight
+          + document.documentElement.scrollTop
+          + (document.documentElement.scrollTop * 0.1)
+        ) >= document.documentElement.offsetHeight
+      ) {
+        if (!busy) setSize(oldSize => oldSize + 1);
+      }
+      window.sessionStorage.setItem('scrollPosition', document.documentElement.scrollTop);
+    }, 100);
+
+    setSize(oldSize => oldSize);
+    window.addEventListener('scroll', handleScroll);
+    if (scrollPosition) {
+      document.documentElement.scrollTop = scrollPosition;
+    }
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [setSize]);
+
+  return (
+    <MovieListComponent
+      isLoading={isValidating}
+      data={data}
+    />
+  );
 };
 
 export default MovieListContainer;
