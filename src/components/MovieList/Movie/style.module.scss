@@ -29,7 +29,7 @@
   }
 
   &:hover {
-    .bottomBar {
+    .overlayCard {
       transform: translate3d(0, 0, 0);
       opacity: 1;
     }
@@ -52,14 +52,113 @@
   color: #ffffff;
 }
 
-.bottomBar {
+.overlayCard {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
-  height: 32px;
-  background-color: #222222;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
   opacity: 0;
-  transform: translate3d(0, 32px, 0);
+  transform: translate3d(0, 0, 0);
   transition: all 0.3s;
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    box-shadow: inset 0 0 1px #def;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0)
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+  }
+
+
+  .movieCardInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+
+    .title {
+      color: #FFFFFF;
+      font-weight: 500;
+      font-size: 1.3em;
+      padding: 0;
+      margin: 0;
+    }
+
+    .category {
+      padding: 0.4em 1.5em;
+      border-radius: 1em;
+      color: #FFFFFF;
+      font-weight: 600;
+      font-size: 0.8em;
+
+      &.movies { background: #01c05d }
+      &.series { background: #f86c2f }
+    }
+
+    .ratingContainer {
+      display: flex;
+      flex-direction: column;
+      color: #FFFFFF;
+      font-size: 0.9em;
+
+      .rating {
+        margin-top: 0.5em;
+        font-size: 1.2em;
+        font-weight: 700;
+      }
+    }
+
+    .ratingContainerTotal {
+      display: flex;
+      align-items: center;
+      color: #FFFFFF;
+      font-size: 1.4em;
+
+      svg {
+        margin-right: -0.3em;
+      }
+    }
+
+    .actionsContainer {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      svg {
+        color: #FFFFFF;
+        font-size: 1.6em;
+        margin: 0 1em;
+      }
+      hr {
+        position: absolute;
+        top: -0.7em;
+        width: 100%;
+        height: 1px;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0) 0,
+          rgba(100, 100, 100, 0.7) 50%,
+          rgba(255, 255, 255, 0));
+      }
+
+    }
+  }
 }

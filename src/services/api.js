@@ -1,7 +1,7 @@
 import Axios from 'axios';
 
 const URL_PREFIX = {
-  development: 'http://assisteai.test',
+  development: 'https://api.assisteai.com.br',
   production: 'https://api.assisteai.com.br',
 };
 

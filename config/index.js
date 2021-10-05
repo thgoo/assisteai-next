@@ -1,4 +1,4 @@
-export const API_URL = 'http://assisteai.test';
+export const API_URL = 'https://api.assisteai.com.br';
 
 export default {
   API_URL,
