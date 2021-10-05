@@ -5,6 +5,7 @@ import NewThreadComponent from './NewThreadComponent';
 import api from '../../services/api';
 import { showToast } from '../../store/ducks/toasts';
 import useAuth from '../Auth/AuthProvider';
+import { mutate } from 'swr';
 
 const NewThreadContainer = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -29,6 +30,7 @@ const NewThreadContainer = () => {
         duration: 5000,
       }));
       hideModal();
+      mutate('/movies?page=1'); // reload first page to show new movie
     } catch ({ response }) {
       if (response.status === 401) {
         dispatch(showToast({
