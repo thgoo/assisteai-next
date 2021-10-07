@@ -26,6 +26,19 @@ const MovieDetailsComponent = ({ movie, isModal }) => (
         <div className={classes.ratingSummaryWrapper}>
           <RatingSummary rating={movie.rating} />
         </div>
+        <div className={classes.title}>
+          <h1>
+            {movie.original_title}
+            <small>({movie.year})</small>
+          </h1>
+        </div>
+        <div className={classes.description}>
+          <p>{movie.description}</p>
+          <Genres genres={movie.genre} />
+        </div>
+        <div className={classes.ratingSummaryWrapper}>
+          <RatingSummary rating={movie.rating} />
+        </div>
       </div>
     </Container>
   </div>
