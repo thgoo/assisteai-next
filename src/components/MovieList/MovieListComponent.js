@@ -6,20 +6,21 @@ import classes from './style.module.scss';
 
 const MovieListComponent = ({ isLoading, data }) => {
   if (!data) {
-    return <div>Nenhum filme indicado.</div>;
+    if (isLoading) return <div className={`${classes.listText} magic-border light`}>Carregando...</div>;
+    return <div className={`${classes.listText} magic-border light`}>Nenhum filme indicado.</div>;
   }
 
   return (
     <div className={classes.movieList}>
-      {data.map(movies => (
-        movies.data.map(movie => (
-          <div className={classes.gridItem} key={movie.id}>
-            <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`}>
-              <a className={classes.itemWrapper}><Movie movie={movie} /></a>
-            </Link>
-          </div>
-        ))
-      ))}
+      {data.map(movies => movies.data.map(movie => (
+        <div className={classes.gridItem} key={movie.id}>
+          <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`}>
+            <a className={classes.itemWrapper}>
+              <Movie movie={movie} />
+            </a>
+          </Link>
+        </div>
+      )))}
       {isLoading ? (
         <div className={classes.gridItem}>
           <div className={`${classes.itemWrapper} ${classes.isSpinner}`}>

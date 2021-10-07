@@ -22,12 +22,13 @@ body {
     margin-top: -9.6rem;
   }
 
-  .title-wrapper {
+  .actions-wrapper {
     position: relative;
   }
 
   .movie-list-wrapper {
     position: relative;
+    margin-top: 2rem;
     z-index: 1;
   }
 
@@ -53,6 +54,12 @@ body {
   .magic-border {
     position: relative;
     z-index: 1;
+
+    &.light {
+      &:after {
+        opacity: 0.3;
+      }
+    }
 
     &:after {
       content: '';

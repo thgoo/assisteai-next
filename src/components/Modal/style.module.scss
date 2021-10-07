@@ -21,13 +21,12 @@
   justify-content: center;
   align-items: flex-start;
   padding-top: 10vh;
-  background-color: rgba(26, 22, 22, .85);
+  background-color: rgba(22, 22, 26, .85);
 }
 
 .magicBorder {
   position: relative;
   border-radius: .5rem;
-  background-color: #2d2d2d;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   animation: slideUp .3s ease forwards;
   padding: 1px;
@@ -47,6 +46,7 @@
   padding: 3rem;
   border: 0;
   border-radius: inherit;
+  background-color: #202225;
   color: #ffffff;
   overflow: auto;
 }
