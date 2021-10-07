@@ -1,12 +1,8 @@
 import Axios from 'axios';
-
-const URL_PREFIX = {
-  development: 'http://assisteai.test',
-  production: 'https://api.assisteai.com.br',
-};
+import { API_URL } from '../../config';
 
 const api = Axios.create({
-  baseURL: URL_PREFIX[process.env.NODE_ENV],
+  baseURL: API_URL,
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
