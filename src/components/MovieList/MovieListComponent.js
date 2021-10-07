@@ -5,7 +5,8 @@ import classes from './style.module.scss';
 
 const MovieListComponent = ({ isLoading, data }) => {
   if (!data) {
-    return <div>Nenhum filme indicado.</div>;
+    if (isLoading) return <div className={`${classes.listText} magic-border light`}>Carregando...</div>;
+    return <div className={`${classes.listText} magic-border light`}>Nenhum filme indicado.</div>;
   }
 
   return (

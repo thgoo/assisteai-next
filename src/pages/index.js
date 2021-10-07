@@ -4,23 +4,25 @@ import MovieList from '../components/MovieList';
 import Backdrop from '../components/Backdrop';
 import NewThread from '../components/NewThread';
 import api from '../services/api';
+import MovieListProvider from '../components/MovieList/MovieListContext';
 
 const IndexPage = ({ movie }) => (
-  <div className="container">
-    <Head>
-      <title>Assiste Aí</title>
-    </Head>
-    <div className="backdrop-wrapper">
-      <Backdrop backdrop={movie.backdrop_path} colorless />
+  <MovieListProvider>
+    <div className="container">
+      <Head>
+        <title>Assiste Aí</title>
+      </Head>
+      <div className="backdrop-wrapper">
+        <Backdrop backdrop={movie.backdrop_path} colorless />
+      </div>
+      <div className="actions-wrapper">
+        <NewThread />
+      </div>
+      <div className="movie-list-wrapper">
+        <MovieList />
+      </div>
     </div>
-    <div className="title-wrapper">
-      <h1 className="page-title">Últimas avaliações</h1>
-      <NewThread />
-    </div>
-    <div className="movie-list-wrapper">
-      <MovieList />
-    </div>
-  </div>
+  </MovieListProvider>
 );
 
 IndexPage.propTypes = {

@@ -8,10 +8,7 @@ import Modal from '../Modal';
 
 const NewThreadComponent = ({
   formik: {
-    handleSubmit,
-    handleChange,
-    isSubmitting,
-    values,
+    handleSubmit, handleChange, isSubmitting, values,
   },
   modalVisible,
   hideModal,
@@ -19,11 +16,11 @@ const NewThreadComponent = ({
   isAuthenticated,
 }) => (
   <div className={classes.newThread}>
-    <div className={classes.buttonWrapper} data-tip={!isAuthenticated ? 'Você deve estar logado para enviar uma avaliação.' : null}>
-      <NewThreadButton
-        onClick={showModal}
-        disabled={!isAuthenticated}
-      />
+    <div
+      className={classes.buttonWrapper}
+      data-tip={!isAuthenticated ? 'Você deve estar logado para enviar uma avaliação.' : null}
+    >
+      <NewThreadButton onClick={showModal} disabled={!isAuthenticated} />
     </div>
     <Modal isOpen={modalVisible} onRequestClose={hideModal}>
       <div className={classes.newThreadForm}>
@@ -50,7 +47,9 @@ const NewThreadComponent = ({
               defaultValue={values.rating}
               required
             >
-              <option value="" disabled>Selecione uma opção...</option>
+              <option value="" disabled>
+                Selecione uma opção...
+              </option>
               <option value="UNMISSABLE">Imperdível</option>
               <option value="VERY_GOOD">Muito bom</option>
               <option value="GOOD">Bom</option>
@@ -74,8 +73,12 @@ const NewThreadComponent = ({
             />
           </div>
           <div className={classes.field}>
-            <button type="button" className="button is-red" onClick={hideModal} disabled={isSubmitting}>Cancelar</button>
-            <button type="submit" className="button is-green" disabled={isSubmitting}>Enviar</button>
+            <button type="button" className="button is-red" onClick={hideModal} disabled={isSubmitting}>
+              Cancelar
+            </button>
+            <button type="submit" className="button is-green" disabled={isSubmitting}>
+              Enviar
+            </button>
           </div>
         </form>
       </div>
