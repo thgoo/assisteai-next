@@ -1,22 +1,8 @@
 import PropTypes from 'prop-types';
+import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faStarHalf } from '@fortawesome/pro-regular-svg-icons';
-import { faPlus } from '@fortawesome/pro-light-svg-icons';
+import { faClock, faPlus, faArrowRight } from '@fortawesome/pro-regular-svg-icons';
 import classes from './style.module.scss';
-
-const parseRating = (rating) => {
-  const map = {
-    STAY_AWAY: 'is0',
-    VERY_BAD: 'is1',
-    BAD: 'is2',
-    COOL: 'is3',
-    GOOD: 'is4',
-    VERY_GOOD: 'is5',
-    UNMISSABLE: 'is6',
-  };
-
-  return map[rating];
-};
 
 const parseCategory = (category) => {
   const map = {
@@ -39,26 +25,26 @@ const MovieComponent = ({ movie }) => (
       {!movie.poster_path ? <div className={classes.posterNotAvailable}>Imagem não disponível</div> : null}
       <div className={classes.overlayCard}>
         <div className={classes.movieCardInfo}>
-          <h2 className={classes.title}>{movie.title || movie.original_title}</h2>
           <span className={`${classes.category} ${parseCategory(movie.category)?.css}`}>
             {parseCategory(movie.category)?.name}
           </span>
           <div className={classes.ratingContainer}>
-            Média
-            <span className={classes.rating}>{movie.average_rating}</span>
-          </div>
-          <div className={classes.ratingContainer}>
-            Última
-            <span className={classes.rating}>{movie.last_rating}</span>
-          </div>
-          <div className={classes.ratingContainerTotal}>
-            <FontAwesomeIcon icon={faStarHalf} />
-            {movie.rating_count}
+            <div>
+              <span className={classes.rating}>{movie.average_rating}</span>
+              Média
+            </div>
+            <div>
+              <span className={classes.rating}>{movie.last_rating}</span>
+              Última
+            </div>
           </div>
           <div className={classes.actionsContainer}>
             <hr />
-            <FontAwesomeIcon icon={faClock} />
-            <FontAwesomeIcon icon={faPlus} />
+            <FontAwesomeIcon icon={faClock} className={classes.pinkColor} data-tip data-for="watch-later" />
+            <FontAwesomeIcon icon={faPlus} className={classes.greenColor} data-tip data-for="indicate" />
+            <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`}>
+              <a><FontAwesomeIcon icon={faArrowRight} className={classes.blueColor} data-tip data-for="view-more" /></a>
+            </Link>
           </div>
         </div>
       </div>

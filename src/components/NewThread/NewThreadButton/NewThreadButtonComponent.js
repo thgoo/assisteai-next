@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCommentAltPlus } from '@fortawesome/pro-solid-svg-icons';
+import { faPlus } from '@fortawesome/pro-regular-svg-icons';
 import classes from './style.module.scss';
 
 const NewThreadButtonComponent = ({ onClick, ...props }) => (
   <div className={classes.newThreadButton}>
     <button type="button" className="button-alt" onClick={onClick} {...props}>
-      <FontAwesomeIcon icon={faCommentAltPlus} />
+      <FontAwesomeIcon icon={faPlus} />
       Nova indicação
     </button>
   </div>

@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import Link from 'next/link';
 import Spinner from '../Spinner';
 import Movie from './Movie';
 import classes from './style.module.scss';
@@ -14,9 +13,7 @@ const MovieListComponent = ({ isLoading, data }) => {
       {data.map(movies => (
         movies.data.map(movie => (
           <div className={classes.gridItem} key={movie.id}>
-            <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`}>
-              <a className={classes.itemWrapper}><Movie movie={movie} /></a>
-            </Link>
+            <div className={classes.itemWrapper}><Movie movie={movie} /></div>
           </div>
         ))
       ))}
