@@ -58,7 +58,7 @@
   bottom: 0;
   left: 0;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.6);
   opacity: 0;
   transform: translate3d(0, 0, 0);
   transition: all 0.3s;
@@ -105,6 +105,7 @@
       flex-direction: column;
       color: #FFFFFF;
       font-size: 0.9em;
+      text-shadow: 1px 1px 0 black;
 
       div {
         display: flex;
@@ -125,14 +126,17 @@
       justify-content: center;
       align-items: center;
       width: 100%;
-      svg {
+      .buttonIcon {
         color: #FFFFFF;
         font-size: 1.6em;
         margin: 0 1em;
-        &.pinkColor:hover { color: #a14ca0; }
-        &.greenColor:hover { color: #4ba053; }
-        &.blueColor:hover { color: #436ab1; }
+        svg {
+          &.pinkColor:hover { color: #a14ca0; }
+          &.greenColor:hover { color: #4ba053; }
+          &.blueColor:hover { color: #436ab1; }
+        }
       }
+      
       hr {
         position: absolute;
         top: -1em;

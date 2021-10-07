@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
-import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faPlus, faArrowRight } from '@fortawesome/pro-regular-svg-icons';
+import { faClock, faPlus } from '@fortawesome/pro-regular-svg-icons';
 import classes from './style.module.scss';
 
 const parseCategory = (category) => {
@@ -16,7 +15,15 @@ const parseCategory = (category) => {
     },
   };
 
-  return map[category];
+  return map[category] || '';
+};
+
+const addWatchLater = (e) => {
+  e.preventDefault();
+};
+
+const addIndication = (e) => {
+  e.preventDefault();
 };
 
 const MovieComponent = ({ movie }) => (
@@ -40,11 +47,12 @@ const MovieComponent = ({ movie }) => (
           </div>
           <div className={classes.actionsContainer}>
             <hr />
-            <FontAwesomeIcon icon={faClock} className={classes.pinkColor} data-tip data-for="watch-later" />
-            <FontAwesomeIcon icon={faPlus} className={classes.greenColor} data-tip data-for="indicate" />
-            <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`}>
-              <a><FontAwesomeIcon icon={faArrowRight} className={classes.blueColor} data-tip data-for="view-more" /></a>
-            </Link>
+            <button type="button" className={classes.buttonIcon} onClick={e => addIndication(e)}>
+              <FontAwesomeIcon icon={faClock} className={classes.pinkColor} data-tip data-for="watch-later" />
+            </button>
+            <button type="button" className={classes.buttonIcon} onClick={e => addWatchLater(e)}>
+              <FontAwesomeIcon icon={faPlus} className={classes.greenColor} data-tip data-for="indicate" />
+            </button>
           </div>
         </div>
       </div>
