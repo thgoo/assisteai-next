@@ -8,15 +8,25 @@
 }
 
 .newThreadForm {
-  min-width: 720px;
+  @media screen and (min-width: 768px) {
+    min-width: 720px;
+  }
 
   form {
     display: grid;
     grid-template:
-      'title rating' auto
-      'comment comment' auto
-      'actions actions' auto / auto 200px;
+      'title' auto
+      'rating' auto
+      'comment' auto
+      'actions' auto / 80vw;
     gap: 3rem;
+
+    @media screen and (min-width: 768px) {
+      grid-template:
+        'title rating' auto
+        'comment comment' auto
+        'actions actions' auto / auto 200px;
+    }
   }
 
   input[type=text],

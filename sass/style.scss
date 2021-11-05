@@ -19,7 +19,11 @@ body {
 
   // index.js
   .backdrop-wrapper {
-    margin-top: -9.6rem;
+    margin-top: -11.9rem;
+    
+    @media screen and (min-width: 768px) {
+      margin-top: -9.6rem;
+    }
   }
 
   .actions-wrapper {
@@ -179,8 +183,13 @@ body {
     }
 
     svg {
+      font-size: 1.4rem;
       line-height: 0;
       margin-right: 0.75rem;
+
+      @media screen and (min-width: 768px) {
+        font-size: 1.8rem;
+      }
     }
   }
 }
