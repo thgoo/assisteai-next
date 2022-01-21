@@ -19,7 +19,7 @@ export async function getStaticProps({ params }) {
   const res = await fetch(`${API_URL}/movies/${id}`);
   const { data } = await res.json();
 
-  return { props: { movie: data } };
+  return { props: { movie: data }, revalidate: 300 }; // revalidate after 5 minutes
 }
 
 const MoviePage = ({ movie }) => {

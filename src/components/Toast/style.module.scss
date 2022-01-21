@@ -61,21 +61,23 @@
   line-height: 1.25;
 }
 
-:global {
-  .toast-enter {
-    opacity: 0;
-    transform: translate3d(0, -20px, 0);
-  }
+.toastContainer {
+  :global {
+    .toast-enter {
+      opacity: 0;
+      transform: translate3d(0, -20px, 0);
+    }
 
-  .toast-enter-active {
-    opacity: 1;
-  }
+    .toast-enter-active {
+      opacity: 1;
+    }
 
-  .toast-exit {
-    opacity: 1;
-  }
+    .toast-exit {
+      opacity: 1;
+    }
 
-  .toast-exit-active {
-    opacity: 0;
+    .toast-exit-active {
+      opacity: 0;
+    }
   }
 }
