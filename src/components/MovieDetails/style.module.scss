@@ -37,7 +37,8 @@
   display: grid;
   grid-template:
     'poster space title rating-summary' minmax(76px, auto)
-    'poster space description description' auto / 200px 3rem auto minmax(auto, 365px);
+    'poster space description description' minmax(auto, 230px)
+    'poster space rating-section rating-section' auto / 200px 3rem auto minmax(auto, auto);
   margin: 0;
   padding-bottom: 2rem;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 1);
@@ -95,33 +96,67 @@
   grid-area: rating-summary;
 }
 
-.ratingList {
+.ratingSection {
+  grid-area: rating-section;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-top: 2.4rem;
-  width: 100%;
+  .titleSection {
+    opacity: 0.5;
+    font-size: 1.6rem;
+    letter-spacing: normal;
+  }
+  .ratingList {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    .ratingWrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      min-width: 160px;
+      
+      max-width: 188.39px;
+      width: 160px;
+      position: relative;
+      padding: 1.5rem 3rem;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      background-color: rgb(68, 68, 68, 0.1);
 
-  .rating {
-    position: relative;
-    width: auto;
-    margin: 2rem 0;
-    padding: 1.5rem 3rem;
-    border-radius: 3px 3px 3px 3px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-    background-color: #444;
-
-    .userAvatar {
-      position: absolute;
-      top: 0.1rem;
-      left: calc(-32px - 1rem);
-      width: 32px;
-      height: 32px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-      border-radius: 50%;
-      background-size: cover;
-      background-position: center;
-      z-index: 1;
+      .userWrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.3rem;
+        .userAvatar {
+          width: 42px;
+          height: 42px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+          border-radius: 50%;
+          background-size: cover;
+          background-position: center;
+          overflow: hidden;
+        }
+        .userDetail {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          .number {
+            font-size: 1.6rem;
+            font-weight: 700;
+          }
+          .userName {
+            margin-top: .5rem;
+            font-size: 1.1rem;
+            opacity: .5;
+          }
+        }
+      }
     }
   }
 }
+
