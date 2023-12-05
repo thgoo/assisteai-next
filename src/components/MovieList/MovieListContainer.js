@@ -33,8 +33,8 @@ const MovieListContainer = () => {
 
   // save scroll position
   useEffect(() => {
-    window.history.scrollRestoration = 'manual';
     const debouncedSaveScrollPosition = debounce(() => {
+      if (window.location.pathname !== '/') return;
       window.sessionStorage.setItem('scrollPosition', document.documentElement.scrollTop);
     }, 20);
 
