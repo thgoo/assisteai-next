@@ -11,16 +11,16 @@ const MovieListContainer = () => {
     busy = isValidating;
   }, [isValidating]);
 
+  // load next page
   useEffect(() => {
     const scrollPosition = window.sessionStorage.getItem('scrollPosition');
     const handleScroll = () => {
       if (
-        window.innerHeight + document.documentElement.scrollTop + 300// document.documentElement.scrollTop * 0.1
+        window.innerHeight + document.documentElement.scrollTop + 360
         >= document.documentElement.offsetHeight
       ) {
         if (!busy) nextPage();
       }
-      window.sessionStorage.setItem('scrollPosition', document.documentElement.scrollTop);
     };
 
     // samePage();
@@ -30,6 +30,16 @@ const MovieListContainer = () => {
     }
     return () => window.removeEventListener('scroll', handleScroll);
   }, [nextPage]);
+
+  // save scroll position
+  useEffect(() => {
+    const debouncedSaveScrollPosition = debounce(() => {
+      window.sessionStorage.setItem('scrollPosition', document.documentElement.scrollTop);
+    }, 20);
+
+    window.addEventListener('scroll', debouncedSaveScrollPosition);
+    return () => window.removeEventListener('scroll', debouncedSaveScrollPosition);
+  }, []);
 
   return <MovieListComponent isLoading={isValidating} data={movies} />;
 };

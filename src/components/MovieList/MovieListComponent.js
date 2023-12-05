@@ -14,7 +14,7 @@ const MovieListComponent = ({ isLoading, data }) => {
     <div className={classes.movieList}>
       {data.map(movies => movies.data.map(movie => (
         <div className={classes.gridItem} key={movie.id}>
-          <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`}>
+          <Link href="/movies/[movieId]" as={`/movies/${movie.id}-${movie.slug}`} scroll={false}>
             <a className={classes.itemWrapper}>
               <Movie movie={movie} />
             </a>

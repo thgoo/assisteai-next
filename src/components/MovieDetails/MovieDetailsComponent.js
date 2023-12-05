@@ -30,7 +30,7 @@ const MovieDetailsComponent = ({ movie, isModal }) => (
           <h3 className={classes.titleSection}>Avaliações</h3>
           <div className={classes.ratingList}>
             {movie.rating.list.map(userRating => (
-              <div className={classes.ratingWrapper}>
+              <div className={classes.ratingWrapper} key={userRating.id}>
                 <div className={classes.userWrapper}>
                   <img src={userRating.user.avatar} alt="Avatar usuário" className={classes.userAvatar} />
                   <div className={classes.userDetail}>
