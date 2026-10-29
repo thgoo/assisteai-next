@@ -1,45 +1,44 @@
 {
-  "name": "assisteai-nextjs",
+  "name": "assisteai-next",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3003",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-pro": "git+ssh://git@github.com:m0nkeylabs/fontawesome-pro.git",
-    "@fortawesome/fontawesome-svg-core": "^1.2.36",
-    "@fortawesome/free-brands-svg-icons": "^5.15.4",
-    "@fortawesome/pro-duotone-svg-icons": "git+ssh://git@github.com:m0nkeylabs/pro-duotone-svg-icons.git",
-    "@fortawesome/pro-light-svg-icons": "git+ssh://git@github.com:m0nkeylabs/pro-light-svg-icons.git",
-    "@fortawesome/pro-regular-svg-icons": "git+ssh://git@github.com:m0nkeylabs/pro-regular-svg-icons.git",
-    "@fortawesome/pro-solid-svg-icons": "git+ssh://git@github.com:m0nkeylabs/pro-solid-svg-icons.git",
-    "@fortawesome/react-fontawesome": "^0.1.15",
     "@react-oauth/google": "^0.13.5",
-    "axios": "^0.21.0",
-    "formik": "^2.1.4",
-    "lodash": "^4.17.20",
-    "lodash.debounce": "^4.0.8",
-    "next": "^10",
-    "next-redux-wrapper": "^6.0.2",
-    "prop-types": "^15.7.2",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-redux": "^7.2.0",
-    "react-tooltip": "^4.2.7",
-    "react-transition-group": "^4.4.1",
-    "redux": "^4.0.5",
-    "sass": "^1.49.0",
-    "swr": "^0.3.9"
+    "lucide-react": "^1.64.0",
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-tooltip": "^6.0.9",
+    "react-transition-group": "^4.4.5",
+    "swr": "^2.5.1"
   },
   "devDependencies": {
-    "babel-eslint": "^10.1.0",
-    "eslint": "^7.1.0",
-    "eslint-config-airbnb": "^18.1.0",
-    "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.20.0",
-    "eslint-plugin-react-hooks": "^4.0.4"
-  }
+    "@playwright/test": "^1.64.1",
+    "@types/bun": "^1.4.4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/react-transition-group": "^4.4.12",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "sass": "^1.107.0",
+    "typescript": "^5"
+  },
+  "packageManager": "bun@1.3.14",
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
 }
