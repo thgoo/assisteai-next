@@ -12,6 +12,10 @@
     max-width: 95%;
   }
 
+  &.isPlaceholder {
+    visibility: hidden;
+  }
+
   &:before {
     content: '';
     position: absolute;
