@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
 import type { Category, MovieSummary } from '@/lib/types';
@@ -8,20 +9,39 @@ const CATEGORIES: Record<Category, { name: string; css: string }> = {
   series: { name: 'Série', css: classes.series },
 };
 
-const Movie = ({ movie }: { movie: MovieSummary }) => {
+type PosterStatus = 'loading' | 'loaded' | 'failed';
+
+interface MovieProps {
+  movie: MovieSummary;
+  /** Called once the poster has loaded or failed */
+  onPosterSettled?: () => void;
+}
+
+const Movie = ({ movie, onPosterSettled }: MovieProps) => {
   const category = CATEGORIES[movie.category];
+  const [posterStatus, setPosterStatus] = useState<PosterStatus>(movie.posterUrl ? 'loading' : 'failed');
+
+  const settlePoster = (status: PosterStatus) => {
+    setPosterStatus(status);
+    onPosterSettled?.();
+  };
 
   return (
-    <div className={classes.movie}>
-      {movie.posterUrl ? (
+    <div className={`${classes.movie} ${posterStatus === 'loading' ? classes.isLoading : ''}`}>
+      {movie.posterUrl && posterStatus !== 'failed' ? (
         <Image
           src={movie.posterUrl}
           alt=""
           fill
           sizes="(min-width: 768px) 260px, 50vw"
-          className={classes.poster}
+          // Hidden pages of the list wait for their posters, which lazy images would never start
+          loading="eager"
+          className={`${classes.poster} ${posterStatus === 'loaded' ? classes.isLoaded : ''}`}
+          onLoad={() => settlePoster('loaded')}
+          onError={() => settlePoster('failed')}
         />
-      ) : <div className={classes.posterNotAvailable}>Imagem não disponível</div>}
+      ) : null}
+      {posterStatus === 'failed' ? <div className={classes.posterNotAvailable}>Imagem não disponível</div> : null}
       <div className={classes.overlayCard}>
         <div className={classes.movieCardInfo}>
           <span className={`${classes.category} ${category.css}`}>

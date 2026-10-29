@@ -12,6 +12,15 @@
   }
 }
 
+.page {
+  // The cards stay items of the list's grid
+  display: contents;
+}
+
+.hiddenPage {
+  display: none;
+}
+
 .gridItem {
   position: relative;
   height: 0;

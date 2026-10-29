@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import Link from 'next/link';
+import {
+  useCallback, useEffect, useRef, useState,
+} from 'react';
 import Spinner from '../Spinner/Spinner';
-import Movie from './Movie/Movie';
 import { useMovieList } from './MovieListProvider';
+import MovieListPage from './MovieListPage';
 import classes from './style.module.scss';
 
 const SCROLL_POSITION_KEY = 'scrollPosition';
@@ -13,11 +14,18 @@ const MovieList = () => {
   const {
     pages, nextPage, isValidating, hasMore,
   } = useMovieList();
-  const busy = useRef(isValidating);
+  // Pages already there when the list mounts show at once: the server-rendered one, and the cached ones when coming
+  // back, so the scroll position can be restored
+  const [initialPageCount] = useState(pages?.length ?? 0);
+  // Pages loaded by scrolling, still hidden while their posters load
+  const [pendingPages, setPendingPages] = useState(0);
+  const onPendingChange = useCallback((delta: number) => setPendingPages(count => count + delta), []);
+  const isLoading = isValidating || pendingPages > 0;
+  const busy = useRef(isLoading);
 
   useEffect(() => {
-    busy.current = isValidating || !hasMore;
-  }, [isValidating, hasMore]);
+    busy.current = isLoading || !hasMore;
+  }, [isLoading, hasMore]);
 
   // Load the next page near the bottom
   useEffect(() => {
@@ -67,14 +75,16 @@ const MovieList = () => {
 
   return (
     <div className={classes.movieList}>
-      {pages.map(page => page.data.map(movie => (
-        <div className={classes.gridItem} key={movie.id}>
-          <Link href={`/movies/${movie.id}-${movie.slug}`} className={classes.itemWrapper}>
-            <Movie movie={movie} />
-          </Link>
-        </div>
-      )))}
-      {isValidating ? (
+      {pages.map((page, i) => (
+        <MovieListPage
+          // Pages only ever append, and a refresh keeps their order
+          key={i}
+          movies={page.data}
+          waitForPosters={i >= initialPageCount}
+          onPendingChange={onPendingChange}
+        />
+      ))}
+      {isLoading ? (
         <div className={classes.gridItem}>
           <div className={`${classes.itemWrapper} ${classes.isSpinner}`}>
             <Spinner />
