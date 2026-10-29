@@ -17,7 +17,7 @@ const NewThread = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [rating, setRating] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const { showToast } = useToast();
   const { refresh: refreshMovies } = useMovieList();
 
@@ -72,7 +72,7 @@ const NewThread = () => {
       <div className={classes.buttonWrapper}>
         {/* The tooltip anchors here, the button's size: a disabled button gets no mouse events */}
         <div
-          data-tooltip-id={!isAuthenticated ? TOOLTIP_ID : undefined}
+          data-tooltip-id={!isAuthenticated && !loading ? TOOLTIP_ID : undefined}
           data-tooltip-content="Você deve estar logado para enviar uma avaliação."
         >
           <NewThreadButton onClick={showModal} disabled={!isAuthenticated} />

@@ -6,12 +6,13 @@ import useAuth from './AuthProvider';
 import classes from './style.module.scss';
 
 const Auth = () => {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
 
   return (
     <div className={classes.auth}>
       <div className={classes.signinWrapper}>
-        {user ? <UserMenu user={user} onLogout={logout} /> : <Login />}
+        {/* Nothing until the session check answers: a signed-in visitor would see "Entrar" flash first */}
+        {loading ? null : (user ? <UserMenu user={user} onLogout={logout} /> : <Login />)}
       </div>
     </div>
   );
