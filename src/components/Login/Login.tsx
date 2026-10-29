@@ -61,6 +61,9 @@ const Login = () => {
                 text="signin_with"
                 shape="pill"
                 theme="filled_black"
+                // Google first renders the generic button, then swaps in the personalized one ("Fazer login como…");
+                // the same width for both keeps the swap in place
+                width={280}
               />
             </div>
           </div>
