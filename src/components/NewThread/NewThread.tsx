@@ -69,12 +69,14 @@ const NewThread = () => {
 
   return (
     <div>
-      <div
-        className={classes.buttonWrapper}
-        data-tooltip-id={!isAuthenticated ? TOOLTIP_ID : undefined}
-        data-tooltip-content="Você deve estar logado para enviar uma avaliação."
-      >
-        <NewThreadButton onClick={showModal} disabled={!isAuthenticated} />
+      <div className={classes.buttonWrapper}>
+        {/* The tooltip anchors here, the button's size: a disabled button gets no mouse events */}
+        <div
+          data-tooltip-id={!isAuthenticated ? TOOLTIP_ID : undefined}
+          data-tooltip-content="Você deve estar logado para enviar uma avaliação."
+        >
+          <NewThreadButton onClick={showModal} disabled={!isAuthenticated} />
+        </div>
       </div>
       <Modal isOpen={modalVisible} onRequestClose={hideModal}>
         <div className={classes.newThreadForm}>
