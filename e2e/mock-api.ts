@@ -7,6 +7,8 @@ import type {
 const PORT = Number(process.env.MOCK_API_PORT || 3999);
 export const SESSION_COOKIE = 'session=e2e';
 
+const PAGE_SIZE = 24;
+
 const RATING_KEYS: RatingKey[] = ['STAY_AWAY', 'VERY_BAD', 'BAD', 'COOL', 'GOOD', 'VERY_GOOD', 'UNMISSABLE'];
 
 // 27 movies: a full first page (24) and a second, last page
@@ -19,7 +21,8 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     title: `Filme ${id}`,
     originalTitle: `Movie ${id}`,
     year: 2000 + id,
-    posterUrl: null,
+    // Only the second page has posters; e2e/posters.spec.ts serves them from the browser
+    posterUrl: id > PAGE_SIZE ? `https://image.tmdb.org/t/p/w500/e2e-poster-${id}.jpg` : null,
     backdropUrl: null,
     rating: { count: 2, average: 'VERY_GOOD', last: RATING_KEYS[id % RATING_KEYS.length] },
     genres: ['Drama', 'Sci-Fi & Fantasy'],
@@ -56,7 +59,6 @@ const summary = (movie: MovieDetail): MovieSummary => ({
   rating: movie.rating,
 });
 
-const PAGE_SIZE = 24;
 
 function corsHeaders(req: Request): Record<string, string> {
   return {
