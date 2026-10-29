@@ -1,7 +1,7 @@
 // A stand-in for the API (../assisteai-api) with fixed data, so the e2e tests need no database.
 // The shapes follow ../assisteai-back/docs/rewrite/05-api-design.md.
 import type {
-  MovieDetail, MovieSummary, RatingKey, User,
+  MovieDetail, MovieSummary, RatingKey, TitleResult, User,
 } from '../src/lib/types';
 
 const PORT = Number(process.env.MOCK_API_PORT || 3999);
@@ -45,6 +45,37 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     ],
   };
 });
+
+// What `GET /titles/search` finds (TMDb's search, in the API)
+const titles: TitleResult[] = [
+  {
+    url: 'https://www.themoviedb.org/movie/603',
+    category: 'movie',
+    title: 'Matrix',
+    originalTitle: 'The Matrix',
+    year: 1999,
+    posterUrl: null,
+    ratedByMe: false,
+  },
+  {
+    url: 'https://www.themoviedb.org/movie/604',
+    category: 'movie',
+    title: 'Matrix Reloaded',
+    originalTitle: 'The Matrix Reloaded',
+    year: 2003,
+    posterUrl: null,
+    ratedByMe: true,
+  },
+  {
+    url: 'https://www.themoviedb.org/tv/1399',
+    category: 'series',
+    title: 'Game of Thrones',
+    originalTitle: 'Game of Thrones',
+    year: 2011,
+    posterUrl: null,
+    ratedByMe: false,
+  },
+];
 
 const user: User = { name: 'Usuário E2E', email: 'e2e@example.com', avatarUrl: null };
 
@@ -111,12 +142,20 @@ Bun.serve({
 
     if (route === 'GET /me') return signedIn(req) ? json(req, { user }) : problem(req, 401, 'Faça login para continuar.');
 
+    if (route === 'GET /titles/search') {
+      if (!signedIn(req)) return problem(req, 401, 'Faça login para continuar.');
+      const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+      if (q.length < 2) return problem(req, 422, 'Digite pelo menos 2 letras.');
+      const found = titles.filter(t => `${t.title} ${t.originalTitle}`.toLowerCase().includes(q));
+      return json(req, { data: found });
+    }
+
     if (route === 'POST /auth/logout') return new Response(null, { status: 204, headers: corsHeaders(req) });
 
     if (route === 'POST /ratings') {
       if (!signedIn(req)) return problem(req, 401, 'Faça login para continuar.');
       const body = (await req.json()) as { url?: string };
-      if (!body.url?.includes('themoviedb.org/movie/')) return problem(req, 422, 'Link do IMDb ou do TMDb inválido.');
+      if (!/themoviedb\.org\/(movie|tv)\//.test(body.url ?? '')) return problem(req, 422, 'Link do IMDb ou do TMDb inválido.');
       return json(req, { movie: { id: 1, slug: 'movie-1' } }, 201);
     }
 
