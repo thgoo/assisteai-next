@@ -1,8 +1,9 @@
-@import 'normalize';
+@use 'sass:color';
+@use 'normalize';
 
 body {
   background-color: #202225;
-  font-family: 'Open Sans', sans-serif;
+  font-family: var(--font-open-sans), sans-serif;
   font-size: 1.4rem;
   color: #ffffff;
 }
@@ -22,6 +23,11 @@ body {
 
   @media screen and (min-width: 768px) {
     margin-top: -9.6rem;
+  }
+
+  // No backdrop (none eligible, or the API failed): keep the content below the header
+  &:empty {
+    margin-top: 0;
   }
 }
 
@@ -137,11 +143,11 @@ body {
   }
 
   &.is-blue {
-    border-bottom: 3px solid darken(#738bd8, 10%);
+    border-bottom: 3px solid color.adjust(#738bd8, $lightness: -10%);
     background-color: #738bd8;
 
     &:not(:disabled):hover {
-      border-color: darken(#839be8, 10%);
+      border-color: color.adjust(#839be8, $lightness: -10%);
       background-color: #839be8;
     }
   }
@@ -168,7 +174,7 @@ body {
   cursor: pointer;
 
   &:not(:disabled):hover {
-    background-color: lighten(#2f3136, 5%);
+    background-color: color.adjust(#2f3136, $lightness: 5%);
   }
 
   &:active,
@@ -190,4 +196,11 @@ body {
       font-size: 1.8rem;
     }
   }
+}
+
+// Lucide icons follow the text size, like the icon font they replaced
+.lucide {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
 }

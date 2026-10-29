@@ -1,0 +1,35 @@
+import { Suspense } from 'react';
+import Backdrop from '@/components/Backdrop/Backdrop';
+import MovieList from '@/components/MovieList/MovieList';
+import MovieListProvider from '@/components/MovieList/MovieListProvider';
+import NewThread from '@/components/NewThread/NewThread';
+import { getLatestMovies, getRandomMovie } from '@/lib/movies';
+
+// A different backdrop on every visit, streamed into the static shell
+async function RandomBackdrop() {
+  const movie = await getRandomMovie();
+
+  return <Backdrop backdrop={movie?.backdropUrl ?? null} colorless />;
+}
+
+export default async function HomePage() {
+  const firstPage = await getLatestMovies();
+
+  return (
+    <MovieListProvider firstPage={firstPage}>
+      <div className="container">
+        <div className="backdrop-wrapper">
+          <Suspense fallback={null}>
+            <RandomBackdrop />
+          </Suspense>
+        </div>
+        <div className="actions-wrapper">
+          <NewThread />
+        </div>
+        <div className="movie-list-wrapper">
+          <MovieList />
+        </div>
+      </div>
+    </MovieListProvider>
+  );
+}
