@@ -105,3 +105,33 @@ test('typing a name without picking a title asks to pick one', async ({ page, co
 
   await expect(page.getByText('Escolha um título da lista ou cole o link do IMDb ou do TMDb.')).toBeVisible();
 });
+
+test('the suggestions float over the modal instead of making it scroll', async ({ page, context }) => {
+  // A full page of results, like TMDb's
+  await page.route('**/titles/search**', route => route.fulfill({
+    json: {
+      data: Array.from({ length: 10 }, (_, i) => ({
+        url: `https://www.themoviedb.org/movie/${1000 + i}`,
+        category: 'movie',
+        title: `Matrix ${i + 1}`,
+        originalTitle: `Matrix ${i + 1}`,
+        year: 2000 + i,
+        posterUrl: null,
+        ratedByMe: false,
+      })),
+    },
+  }));
+  const field = await openForm(page, context);
+
+  await field.fill('matrix');
+  await expect(suggestions(page)).toHaveCount(10);
+
+  expect(await page.getByRole('listbox').evaluate(list => list.parentElement === document.body)).toBe(true);
+  const modalScrolls = await field.evaluate((input) => {
+    for (let el = input.parentElement; el; el = el.parentElement) {
+      if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflowY === 'auto') return true;
+    }
+    return false;
+  });
+  expect(modalScrolls).toBe(false);
+});
