@@ -23,25 +23,28 @@ const MovieList = () => {
   const isLoading = isValidating || pendingPages > 0;
   const busy = useRef(isLoading);
 
+  // Load the next page near the bottom
+  const loadMoreAtBottom = useCallback(() => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop + 360
+      >= document.documentElement.offsetHeight
+      && !busy.current
+    ) {
+      nextPage();
+    }
+  }, [nextPage]);
+
+  // Also checked without a scroll, whenever loading ends: the visitor may have reached the bottom before hydration, or
+  // the list may not fill the screen at all
   useEffect(() => {
     busy.current = isLoading || !hasMore;
-  }, [isLoading, hasMore]);
+    loadMoreAtBottom();
+  }, [isLoading, hasMore, loadMoreAtBottom]);
 
-  // Load the next page near the bottom
   useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop + 360
-        >= document.documentElement.offsetHeight
-        && !busy.current
-      ) {
-        nextPage();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [nextPage]);
+    window.addEventListener('scroll', loadMoreAtBottom);
+    return () => window.removeEventListener('scroll', loadMoreAtBottom);
+  }, [loadMoreAtBottom]);
 
   // Coming back to the list returns to where the visitor was
   useEffect(() => {
