@@ -36,20 +36,12 @@ Single host, PM2 ([`ecosystem.config.cjs`](ecosystem.config.cjs)), like `../barg
 `NEXT_PUBLIC_*` variables must be set when building. `API_INTERNAL_URL` lets the server reach the API without leaving the
 host.
 
-The PM2 app is `assisteai.com.br` on port 3003 (nginx proxies to `127.0.0.1:3003`). Another copy of the site, like the
-staging one at `/var/www/beta2.assisteai.com.br`, names its own app and port in a `.env.deploy` file (not committed):
+The site lives in `/var/www/assisteai.com.br`: PM2 app `assisteai.com.br` on port 3003, where nginx sends
+`assisteai.com.br`, `www.` and `beta2.` alike. To update it: `scripts/deploy.sh`.
 
-```sh
-APP_NAME=beta2.assisteai.com.br
-PORT=3008
-```
-
-The process from before this setup was started with `yarn start -p 3003`, and PM2 keeps a process's command across
-restarts, so switch it once (likewise for a copy first started by hand):
-
-```sh
-pm2 delete assisteai.com.br && pm2 start ecosystem.config.cjs && pm2 save
-```
+A separate copy of the site (another folder) would name its own PM2 app and port in a `.env.deploy` file (not
+committed), e.g. `APP_NAME=staging.assisteai.com.br` and `PORT=3008`. PM2 keeps a process's command across restarts,
+so an app first started some other way is switched once with `pm2 delete <app>` before `scripts/deploy.sh`.
 
 ## Layout
 
