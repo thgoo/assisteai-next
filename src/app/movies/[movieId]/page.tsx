@@ -9,6 +9,9 @@ export const ensureStatic = 'navigation';
 export async function generateStaticParams() {
   const { data: movies } = await getLatestMovies();
 
+  // Cache Components needs at least one; with no movies yet, an id that answers 404 without calling the API
+  if (movies.length === 0) return [{ movieId: '0' }];
+
   return movies.map(movie => ({ movieId: `${movie.id}-${movie.slug}` }));
 }
 
