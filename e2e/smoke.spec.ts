@@ -19,6 +19,13 @@ test('home renders the first page on the server and loads more on scroll', async
   await expect(cards).toHaveCount(27);
 });
 
+test('a screen taller than the first page loads the next one without scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 4000 });
+  await page.goto('/');
+
+  await expect(page.locator('a[href="/movies/27-movie-27"]')).toBeAttached();
+});
+
 test('home HTML already has the list', async ({ request }) => {
   const html = await (await request.get('/')).text();
   expect(html).toContain('href="/movies/1-movie-1"');

@@ -29,13 +29,10 @@ const spinner = (page: Page) => page.locator('[class*="_spinner"]');
 const naturalWidth = (page: Page, id: number) => card(page, id).locator('img')
   .evaluate((img: HTMLImageElement) => img.naturalWidth);
 
-/** Scrolls until the second page is in the DOM; the first scrolls can land before hydration */
 async function loadSecondPage(page: Page) {
   await page.goto('/');
-  await expect(async () => {
-    await page.mouse.wheel(0, 100_000);
-    await expect(card(page, 25)).toBeAttached({ timeout: 500 });
-  }).toPass();
+  await page.mouse.wheel(0, 100_000);
+  await expect(card(page, 25)).toBeAttached();
 }
 
 test('a scrolled page stays hidden until its posters load', async ({ page }) => {
