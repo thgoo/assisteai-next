@@ -57,10 +57,10 @@ const MovieList = () => {
     };
   }, []);
 
-  if (!pages) {
+  if (!pages?.[0]?.data.length) {
     return (
       <div className={`${classes.listText} magic-border light`}>
-        {isValidating ? 'Carregando...' : 'Nenhum filme indicado.'}
+        {pages ? 'Nenhum filme indicado.' : 'Carregando...'}
       </div>
     );
   }
