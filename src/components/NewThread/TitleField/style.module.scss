@@ -7,6 +7,11 @@
   input {
     width: 100%;
   }
+
+  // The list hangs from the input: one piece, square corners where they meet
+  &.isOpen input {
+    border-radius: 5px 5px 0 0;
+  }
 }
 
 // Same look as the form's other fields (../style.module.scss)
@@ -47,7 +52,7 @@
 
 .list {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: 100%;
   right: 0;
   left: 0;
   max-height: 320px;
@@ -55,15 +60,31 @@
   padding: 0.5rem 0;
   overflow-y: auto;
   list-style: none;
-  border-radius: 5px;
-  background-color: #2f3136;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0 0 5px 5px;
+  // Lighter than the fields and floating above the form, like the toasts
+  background-color: #36393f;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
   z-index: 10;
 }
 
 .status {
-  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.5rem;
+  font-size: 1.3rem;
   color: #a0a2a5;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .option {
@@ -75,7 +96,12 @@
 
   &.isActive,
   &:hover {
-    background-color: color.adjust(#2f3136, $lightness: 5%);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  // The keyboard's pick, in the site's blue
+  &.isActive {
+    box-shadow: inset 3px 0 0 #4d69b4;
   }
 
   &[aria-disabled='true'] {
@@ -114,4 +140,11 @@
 .titleMeta {
   font-size: 1.2rem;
   color: #a0a2a5;
+}
+
+// The searched text, in the title
+.match {
+  background: none;
+  color: inherit;
+  font-weight: 700;
 }

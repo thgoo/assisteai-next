@@ -2,7 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import {
+  CircleAlert, LoaderCircle, SearchX, X,
+} from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import type { Category, TitleResult } from '@/lib/types';
 import classes from './style.module.scss';
@@ -133,7 +135,7 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
   const showList = isOpen && canSearch;
 
   return (
-    <div className={classes.titleField}>
+    <div className={`${classes.titleField} ${showList ? classes.isOpen : ''}`}>
       <input type="hidden" name={name} value={link} />
       {selected ? (
         <div className={classes.selected}>
@@ -157,6 +159,9 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
           aria-autocomplete="list"
           aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
           autoComplete="off"
+          // Not a form password managers should fill
+          data-1p-ignore
+          data-lpignore="true"
           placeholder="Digite o nome ou cole o link do IMDb/TMDb..."
           value={query}
           onChange={(evt) => {
@@ -172,10 +177,23 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
       {showList ? (
         // Clicks don't take the focus away from the input, which would close the list first
         <ul id={listId} role="listbox" className={classes.list} onMouseDown={evt => evt.preventDefault()}>
-          {!current ? <li className={classes.status}>Buscando...</li> : null}
-          {current?.status === 'error' ? <li className={classes.status}>Não foi possível buscar agora.</li> : null}
+          {!current ? (
+            <li className={classes.status}>
+              <LoaderCircle className={classes.spinning} />
+              Buscando...
+            </li>
+          ) : null}
+          {current?.status === 'error' ? (
+            <li className={classes.status}>
+              <CircleAlert />
+              Não foi possível buscar agora.
+            </li>
+          ) : null}
           {current?.status === 'done' && !results.length ? (
-            <li className={classes.status}>Nenhum título encontrado.</li>
+            <li className={classes.status}>
+              <SearchX />
+              Nenhum título encontrado.
+            </li>
           ) : null}
           {results.map((title, i) => (
             <li
@@ -189,7 +207,7 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
             >
               <Poster title={title} />
               <div className={classes.titleText}>
-                <span className={classes.titleName}>{title.title}</span>
+                <span className={classes.titleName}>{highlight(title.title, term)}</span>
                 <span className={classes.titleMeta}>
                   {describe(title)}
                   {title.ratedByMe ? <strong> · Você já avaliou</strong> : null}
@@ -209,6 +227,25 @@ const describe = (title: TitleResult) => [
   title.year,
   title.originalTitle !== title.title ? title.originalTitle : null,
 ].filter(Boolean).join(' · ');
+
+/** The title with the searched text in bold, ignoring case and accents ("acao" finds "Ação") */
+const highlight = (text: string, term: string) => {
+  const fold = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  // Positions carry over when each character folds to exactly one (accents as single characters, the usual case)
+  const folded = fold(text);
+  const foldedTerm = fold(term);
+  const start = foldedTerm && folded.length === text.length ? folded.indexOf(foldedTerm) : -1;
+  if (start < 0) return text;
+
+  const end = start + foldedTerm.length;
+  return (
+    <>
+      {text.slice(0, start)}
+      <mark className={classes.match}>{text.slice(start, end)}</mark>
+      {text.slice(end)}
+    </>
+  );
+};
 
 const Poster = ({ title }: { title: TitleResult }) => (
   title.posterUrl
