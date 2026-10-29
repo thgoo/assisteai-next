@@ -11,6 +11,7 @@ import { useMovieList } from '../MovieList/MovieListProvider';
 import { TOOLTIP_ID } from '../Providers/Providers';
 import { useToast } from '../Toast/ToastProvider';
 import NewThreadButton from './NewThreadButton/NewThreadButton';
+import TitleField from './TitleField/TitleField';
 import classes from './style.module.scss';
 
 const NewThread = () => {
@@ -31,6 +32,15 @@ const NewThread = () => {
   const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
     const form = new FormData(evt.currentTarget);
+    if (!form.get('url')) {
+      showToast({
+        type: 'error',
+        title: 'Ops!',
+        text: 'Escolha um título da lista ou cole o link do IMDb ou do TMDb.',
+        duration: 5000,
+      });
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -83,13 +93,7 @@ const NewThread = () => {
           <form onSubmit={handleSubmit}>
             <div className={classes.field}>
               <label htmlFor="url">Filme/Série *</label>
-              <input
-                type="text"
-                name="url"
-                id="url"
-                placeholder="Digite o link do imdb ou tmdb..."
-                required
-              />
+              <TitleField id="url" name="url" />
             </div>
             <div className={classes.field}>
               <label htmlFor="rating">Avaliação *</label>

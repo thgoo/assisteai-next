@@ -46,3 +46,14 @@ export interface User {
   email: string;
   avatarUrl: string | null;
 }
+
+/** A TMDb title from `GET /titles/search`; `url` goes as is to `POST /ratings` */
+export interface TitleResult {
+  url: string;
+  category: Category;
+  title: string;
+  originalTitle: string;
+  year: number | null;
+  posterUrl: string | null;
+  ratedByMe: boolean;
+}
