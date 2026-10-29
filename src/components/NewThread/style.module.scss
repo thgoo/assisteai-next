@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 .buttonWrapper {
   display: flex;
   justify-content: flex-end;
@@ -45,10 +47,10 @@
     &:focus {
       border: 0;
       outline: 0;
-      background-color: lighten(#292b2f, 2%);
+      background-color: color.adjust(#292b2f, $lightness: 2%);
 
       + .suffix {
-        background-color: lighten(#292b2f, 2%);
+        background-color: color.adjust(#292b2f, $lightness: 2%);
       }
     }
   }

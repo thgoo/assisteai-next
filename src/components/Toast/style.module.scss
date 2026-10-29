@@ -62,22 +62,20 @@
 }
 
 .toastContainer {
-  :global {
-    .toast-enter {
-      opacity: 0;
-      transform: translate3d(0, -20px, 0);
-    }
+  :global(.toast-enter) {
+    opacity: 0;
+    transform: translate3d(0, -20px, 0);
+  }
 
-    .toast-enter-active {
-      opacity: 1;
-    }
+  :global(.toast-enter-active) {
+    opacity: 1;
+  }
 
-    .toast-exit {
-      opacity: 1;
-    }
+  :global(.toast-exit) {
+    opacity: 1;
+  }
 
-    .toast-exit-active {
-      opacity: 0;
-    }
+  :global(.toast-exit-active) {
+    opacity: 0;
   }
 }

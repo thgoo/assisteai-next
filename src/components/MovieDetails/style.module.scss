@@ -2,6 +2,11 @@
   position: relative;
   margin-top: -96px;
 
+  // The backdrop is what pushes the content below the header
+  &.hasNoBackdrop {
+    margin-top: 0;
+  }
+
   &.isModal {
     margin-top: 0;
     background-color: #202225;
@@ -53,9 +58,14 @@
     width: 100%;
     height: 0;
     padding-bottom: 150%;
-    background-size: cover;
-    background-position: center 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  // Below the .magic-border highlight (:after, z-index -1)
+  .posterImage {
+    z-index: -2;
+    object-fit: cover;
+    object-position: center 0;
   }
 }
 
@@ -65,7 +75,7 @@
   h1 {
     display: block;
     margin: 3rem 0 0;
-    font-family: 'Lato', sans-serif;
+    font-family: var(--font-lato), sans-serif;
     font-size: 4rem;
     font-weight: 400;
     letter-spacing: -1px;
