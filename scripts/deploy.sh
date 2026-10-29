@@ -28,7 +28,8 @@ pm2 startOrRestart ecosystem.config.cjs --update-env
 pm2 save
 
 for _ in $(seq 1 30); do
-  if curl -fsS -o /dev/null "http://127.0.0.1:${PORT}/"; then
+  # Silent: the first tries can land before the server listens
+  if curl -fs -o /dev/null "http://127.0.0.1:${PORT}/"; then
     echo "deploy ok: ${APP_NAME} at $(git rev-parse --short HEAD)"
     exit 0
   fi
