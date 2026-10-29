@@ -82,6 +82,27 @@ test('anonymous visitors see the login button and cannot rate', async ({ page })
   await expect(page.getByRole('button', { name: 'Nova indicação' })).toBeDisabled();
 });
 
+test('signed-in users never see the login button while the session is checked', async ({ page, context }) => {
+  await signIn(context);
+  // The session check answers only when the test says so
+  let answerSession = () => {};
+  await page.route('**/me', async (route) => {
+    await new Promise<void>((resolve) => {
+      answerSession = resolve;
+    });
+    await route.continue();
+  });
+  await page.goto('/');
+
+  // `isVisible` checks right now; `toBeHidden` would wait for the button to go
+  await expect(page.getByRole('button', { name: 'Nova indicação' })).toBeVisible();
+  expect(await page.getByRole('button', { name: 'Entrar' }).isVisible()).toBe(false);
+
+  answerSession();
+  await expect(page.getByRole('button', { name: 'Usuário E2E' })).toBeVisible();
+  expect(await page.getByRole('button', { name: 'Entrar' }).isVisible()).toBe(false);
+});
+
 test('signed-in users rate a movie', async ({ page, context }) => {
   await signIn(context);
   await page.goto('/');
