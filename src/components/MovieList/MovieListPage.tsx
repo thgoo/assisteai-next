@@ -15,9 +15,12 @@ interface MovieListPageProps {
   waitForPosters: boolean;
   /** +1 while this page is hidden, -1 once it shows */
   onPendingChange: (delta: number) => void;
+  onOpenMovie: () => void;
 }
 
-const MovieListPage = ({ movies, waitForPosters, onPendingChange }: MovieListPageProps) => {
+const MovieListPage = ({
+  movies, waitForPosters, onPendingChange, onOpenMovie,
+}: MovieListPageProps) => {
   const posters = movies.filter(movie => movie.posterUrl).length;
   const [settledPosters, setSettledPosters] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
@@ -38,7 +41,7 @@ const MovieListPage = ({ movies, waitForPosters, onPendingChange }: MovieListPag
     <div className={visible ? classes.page : classes.hiddenPage}>
       {movies.map(movie => (
         <div className={classes.gridItem} key={movie.id}>
-          <Link href={`/movies/${movie.id}-${movie.slug}`} className={classes.itemWrapper}>
+          <Link href={`/movies/${movie.id}-${movie.slug}`} className={classes.itemWrapper} onClick={onOpenMovie}>
             <Movie movie={movie} onPosterSettled={() => setSettledPosters(count => count + 1)} />
           </Link>
         </div>

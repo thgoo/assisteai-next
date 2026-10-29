@@ -46,27 +46,35 @@ const MovieList = () => {
     return () => window.removeEventListener('scroll', loadMoreAtBottom);
   }, [loadMoreAtBottom]);
 
-  // Coming back to the list returns to where the visitor was
+  // Coming back to the list returns to where the visitor was. Once a movie is opened, scroll events no longer count:
+  // the router swaps in the shorter movie page before the URL changes, and the browser clamps the scroll to it
+  const leaving = useRef(false);
+  const saveScrollPosition = useCallback(() => {
+    if (leaving.current) return;
+    window.sessionStorage.setItem(SCROLL_POSITION_KEY, String(document.documentElement.scrollTop));
+  }, []);
+  const onOpenMovie = useCallback(() => {
+    saveScrollPosition();
+    leaving.current = true;
+  }, [saveScrollPosition]);
+
   useEffect(() => {
     window.history.scrollRestoration = 'manual';
     const scrollPosition = window.sessionStorage.getItem(SCROLL_POSITION_KEY);
     if (scrollPosition) document.documentElement.scrollTop = Number(scrollPosition);
 
     let timeout: ReturnType<typeof setTimeout>;
-    const saveScrollPosition = () => {
+    const onScroll = () => {
       clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        if (window.location.pathname !== '/') return;
-        window.sessionStorage.setItem(SCROLL_POSITION_KEY, String(document.documentElement.scrollTop));
-      }, 20);
+      timeout = setTimeout(saveScrollPosition, 20);
     };
 
-    window.addEventListener('scroll', saveScrollPosition);
+    window.addEventListener('scroll', onScroll);
     return () => {
       clearTimeout(timeout);
-      window.removeEventListener('scroll', saveScrollPosition);
+      window.removeEventListener('scroll', onScroll);
     };
-  }, []);
+  }, [saveScrollPosition]);
 
   if (!pages?.[0]?.data.length) {
     return (
@@ -85,6 +93,7 @@ const MovieList = () => {
           movies={page.data}
           waitForPosters={i >= initialPageCount}
           onPendingChange={onPendingChange}
+          onOpenMovie={onOpenMovie}
         />
       ))}
       {isLoading ? (
