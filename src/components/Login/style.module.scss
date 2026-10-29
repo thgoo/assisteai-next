@@ -60,5 +60,9 @@
   .googleOption {
     display: flex;
     justify-content: center;
+    // Google's iframe briefly overflows while it swaps in the personalized button; clipping it here keeps the modal
+    // from flashing scrollbars
+    height: 44px;
+    overflow: hidden;
   }
 }
