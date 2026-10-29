@@ -1,0 +1,91 @@
+import { expect, test } from '@playwright/test';
+
+const signIn = (context: import('@playwright/test').BrowserContext) => context.addCookies([
+  // The mock API's session (e2e/mock-api.ts)
+  {
+    name: 'session', value: 'e2e', domain: 'localhost', path: '/',
+  },
+]);
+
+test('home renders the first page on the server and loads more on scroll', async ({ page }) => {
+  await page.goto('/');
+
+  const cards = page.locator('a[href^="/movies/"]');
+  await expect(cards).toHaveCount(24);
+  await expect(page.locator('a[href="/movies/1-movie-1"]')).toContainText('Muito Bom');
+
+  await page.mouse.wheel(0, 100_000);
+  await expect(page.locator('a[href="/movies/27-movie-27"]')).toBeVisible();
+  await expect(cards).toHaveCount(27);
+});
+
+test('home HTML already has the list', async ({ request }) => {
+  const html = await (await request.get('/')).text();
+  expect(html).toContain('href="/movies/1-movie-1"');
+});
+
+test('movie page shows the movie and its ratings', async ({ page }) => {
+  await page.goto('/movies/2-movie-2');
+
+  await expect(page).toHaveTitle('Assiste Aí - Movie 2');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 2');
+  await expect(page.getByText('Sci-Fi & Fantasy')).toBeVisible();
+  await expect(page.getByText('Bruno')).toBeVisible();
+  await expect(page.getByText('Imperdível').first()).toBeVisible();
+});
+
+test('a movie outside the build is generated on its first visit', async ({ request }) => {
+  const res = await request.get('/movies/26-movie-26');
+  expect(res.status()).toBe(200);
+  expect(await res.text()).toContain('Movie 26');
+});
+
+test('unknown movies answer 404', async ({ request }) => {
+  expect((await request.get('/movies/999-nope')).status()).toBe(404);
+  expect((await request.get('/movies/not-a-movie')).status()).toBe(404);
+});
+
+test('anonymous visitors see the login button and cannot rate', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Nova indicação' })).toBeDisabled();
+});
+
+test('signed-in users rate a movie', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+  await page.getByLabel('Filme/Série *').fill('https://www.themoviedb.org/movie/603');
+  await page.getByLabel('Avaliação *').selectOption('UNMISSABLE');
+  await page.getByLabel('Comentário').fill('Clássico');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+
+  await expect(page.getByText('Sua avaliação foi enviada com sucesso.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Enviar' })).toBeHidden();
+});
+
+test('rating errors show the API message', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+  await page.getByLabel('Filme/Série *').fill('https://example.com/movie');
+  await page.getByLabel('Avaliação *').selectOption('BAD');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+
+  await expect(page.getByText('Link do IMDb ou do TMDb inválido.')).toBeVisible();
+  // The form stays open with what was typed
+  await expect(page.getByLabel('Filme/Série *')).toHaveValue('https://example.com/movie');
+});
+
+test('signed-in users log out', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Usuário E2E' }).click();
+  await page.getByRole('button', { name: 'Sair' }).click();
+
+  await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
+});
