@@ -1,7 +1,13 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback, useEffect, useId, useRef, useState,
+} from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import {
+  autoUpdate, flip, size, useFloating,
+} from '@floating-ui/react-dom';
 import {
   CircleAlert, LoaderCircle, SearchX, X,
 } from 'lucide-react';
@@ -10,6 +16,9 @@ import type { Category, TitleResult } from '@/lib/types';
 import classes from './style.module.scss';
 
 const MIN_QUERY_LENGTH = 2;
+const LIST_MAX_HEIGHT = 320;
+/** Space kept between the list and the window's edges */
+const VIEWPORT_PADDING = 16;
 const DEBOUNCE_MS = 300;
 // A pasted IMDb/TMDb link goes straight to the API, no search
 const LINK_PATTERN = /^https?:\/\/|imdb\.com|themoviedb\.org/i;
@@ -134,8 +143,38 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
   const link = selected?.url ?? (isLink ? query.trim() : '');
   const showList = isOpen && canSearch;
 
+  // The list lives in <body>, outside the modal (which scrolls its content), placed against the input: as wide, below
+  // it or above when there's no room, never taller than the room left
+  const [anchor, setAnchor] = useState<HTMLInputElement | null>(null);
+  const [listElement, setListElement] = useState<HTMLUListElement | null>(null);
+  // Stable, so React doesn't detach and reattach it (two state updates) on every render
+  const setInput = useCallback((input: HTMLInputElement | null) => {
+    inputRef.current = input;
+    setAnchor(input);
+  }, []);
+  const { floatingStyles, placement } = useFloating({
+    elements: { reference: anchor, floating: listElement },
+    open: showList,
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      flip({ padding: VIEWPORT_PADDING }),
+      size({
+        padding: VIEWPORT_PADDING,
+        apply({ rects, availableHeight, elements }) {
+          Object.assign(elements.floating.style, {
+            width: `${rects.reference.width}px`,
+            maxHeight: `${Math.min(LIST_MAX_HEIGHT, availableHeight)}px`,
+          });
+        },
+      }),
+    ],
+  });
+  const isAbove = placement.startsWith('top');
+
   return (
-    <div className={`${classes.titleField} ${showList ? classes.isOpen : ''}`}>
+    <div className={`${classes.titleField} ${showList ? classes.isOpen : ''} ${isAbove ? classes.isAbove : ''}`}>
       <input type="hidden" name={name} value={link} />
       {selected ? (
         <div className={classes.selected}>
@@ -150,7 +189,7 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
         </div>
       ) : (
         <input
-          ref={inputRef}
+          ref={setInput}
           type="text"
           id={id}
           role="combobox"
@@ -174,9 +213,16 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
           onKeyUp={onKeyUp}
         />
       )}
-      {showList ? (
+      {showList ? createPortal(
         // Clicks don't take the focus away from the input, which would close the list first
-        <ul id={listId} role="listbox" className={classes.list} onMouseDown={evt => evt.preventDefault()}>
+        <ul
+          ref={setListElement}
+          style={floatingStyles}
+          id={listId}
+          role="listbox"
+          className={`${classes.list} ${isAbove ? classes.isAbove : ''}`}
+          onMouseDown={evt => evt.preventDefault()}
+        >
           {!current ? (
             <li className={classes.status}>
               <LoaderCircle className={classes.spinning} />
@@ -215,7 +261,8 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
               </div>
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body,
       ) : null}
     </div>
   );

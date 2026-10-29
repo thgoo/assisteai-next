@@ -12,6 +12,10 @@
   &.isOpen input {
     border-radius: 5px 5px 0 0;
   }
+
+  &.isOpen.isAbove input {
+    border-radius: 0 0 5px 5px;
+  }
 }
 
 // Same look as the form's other fields (../style.module.scss)
@@ -50,12 +54,8 @@
   }
 }
 
+// In <body>, placed by Floating UI (TitleField.tsx), above the modal (z-index 100)
 .list {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  left: 0;
-  max-height: 320px;
   margin: 0;
   padding: 0.5rem 0;
   overflow-y: auto;
@@ -65,7 +65,15 @@
   // Lighter than the fields and floating above the form, like the toasts
   background-color: #36393f;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
-  z-index: 10;
+  color: #ffffff;
+  z-index: 110;
+
+  &.isAbove {
+    border-top: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 5px 5px 0 0;
+    box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.45);
+  }
 }
 
 .status {
