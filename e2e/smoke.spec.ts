@@ -26,6 +26,29 @@ test('a screen taller than the first page loads the next one without scrolling',
   await expect(page.locator('a[href="/movies/27-movie-27"]')).toBeAttached();
 });
 
+for (const way of ['back button', 'logo'] as const) {
+  test(`coming back to the list with the ${way} returns to the same place`, async ({ page }) => {
+    await page.goto('/');
+    // Away from the bottom, so no next page starts loading
+    const movie = page.locator('a[href="/movies/8-movie-8"]');
+    await movie.scrollIntoViewIfNeeded();
+    // Let the debounced save run, as a visitor reading the list would
+    await page.waitForTimeout(100);
+    const scrollTop = () => page.evaluate(() => Math.round(document.documentElement.scrollTop));
+    const before = await scrollTop();
+    expect(before).toBeGreaterThan(0);
+
+    await movie.click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 8');
+
+    if (way === 'logo') await page.getByRole('link', { name: 'Logo' }).click();
+    else await page.goBack();
+
+    await expect(movie).toBeInViewport();
+    await expect.poll(scrollTop).toBe(before);
+  });
+}
+
 test('home HTML already has the list', async ({ request }) => {
   const html = await (await request.get('/')).text();
   expect(html).toContain('href="/movies/1-movie-1"');
