@@ -1,21 +1,24 @@
 // PM2 process for the front, like ../bargah.com.br/bargah.
 //
-//   pm2 start ecosystem.config.cjs
+//   scripts/deploy.sh     # builds, then starts or restarts it
 //
-// Next.js reads .env.production.local / .env.local from this folder (NEXT_PUBLIC_* at build time).
+// Name and port come from the environment: production by default, or `.env.deploy` for another copy (see
+// scripts/deploy.sh). Next.js reads .env.production.local from this folder (NEXT_PUBLIC_* at build time).
 
 const os = require('os');
 const path = require('path');
 
 const BUN = process.env.BUN_PATH || path.join(os.homedir(), '.bun/bin/bun');
+const NAME = process.env.APP_NAME || 'assisteai.com.br';
+const PORT = process.env.PORT || '3003';
 
 module.exports = {
   apps: [
     {
-      name: 'assisteai.com.br',
+      name: NAME,
       cwd: __dirname,
       script: BUN,
-      args: 'run start -- -p 3003',
+      args: `run start -- -p ${PORT}`,
       interpreter: 'none',
       exec_mode: 'fork',
       autorestart: true,
