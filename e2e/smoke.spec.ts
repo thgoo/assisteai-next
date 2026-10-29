@@ -34,9 +34,10 @@ for (const way of ['back button', 'logo'] as const) {
     await movie.scrollIntoViewIfNeeded();
     // Let the debounced save run, as a visitor reading the list would
     await page.waitForTimeout(100);
-    const scrollTop = () => page.evaluate(() => Math.round(document.documentElement.scrollTop));
-    const before = await scrollTop();
-    expect(before).toBeGreaterThan(0);
+    expect(await page.evaluate(() => document.documentElement.scrollTop)).toBeGreaterThan(0);
+    // Where the card sits on the screen: what the visitor sees
+    const cardTop = () => movie.evaluate(el => Math.round(el.getBoundingClientRect().top));
+    const before = await cardTop();
 
     await movie.click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 8');
@@ -45,7 +46,7 @@ for (const way of ['back button', 'logo'] as const) {
     else await page.goBack();
 
     await expect(movie).toBeInViewport();
-    await expect.poll(scrollTop).toBe(before);
+    await expect.poll(cardTop).toBe(before);
   });
 }
 

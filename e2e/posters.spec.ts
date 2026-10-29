@@ -64,3 +64,27 @@ test('a poster that fails shows the fallback', async ({ page }) => {
 
   await expect(card(page, 25)).toContainText('Imagem não disponível');
 });
+
+for (const way of ['back button', 'logo'] as const) {
+  test(`coming back with the ${way} to a movie of a scrolled page returns to the same place`, async ({ page }) => {
+    const release = servePosters(page, 'hold');
+    release();
+    await loadSecondPage(page);
+    await expect(card(page, 26)).toBeVisible();
+    await card(page, 26).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(100);
+    // Where the card sits on the screen: what the visitor sees (the scroll offset itself can change with the content
+    // above it, like the backdrop)
+    const cardTop = () => card(page, 26).evaluate(el => Math.round(el.getBoundingClientRect().top));
+    const before = await cardTop();
+
+    await card(page, 26).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 26');
+
+    if (way === 'logo') await page.getByRole('link', { name: 'Logo' }).click();
+    else await page.goBack();
+
+    await expect(card(page, 26)).toBeInViewport();
+    await expect.poll(cardTop).toBe(before);
+  });
+}

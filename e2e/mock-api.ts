@@ -98,7 +98,10 @@ Bun.serve({
       });
     }
 
-    if (route === 'GET /movies/random') return json(req, movies[0]);
+    // With a backdrop, like production (it takes space above the list, which scroll restoration depends on)
+    if (route === 'GET /movies/random') return json(req, { ...movies[0], backdropUrl: `http://localhost:${PORT}/backdrop.png` });
+
+    if (route === 'GET /backdrop.png') return new Response(Bun.file(new URL('../public/img/logo-square.png', import.meta.url)));
 
     const movieMatch = route.match(/^GET \/movies\/(\d+)$/);
     if (movieMatch) {
