@@ -12,7 +12,7 @@ const UserMenuComponent = forwardRef(({
   <div className={classes.userMenu}>
     <button type="button" onClick={toggle} ref={ref}>
       <div className={classes.name}>{user.name}</div>
-      <div className={classes.avatar} style={{ backgroundImage: `url(${user.avatar})` }} />
+      <div className={classes.avatar} style={{ backgroundImage: `url(${user.avatarUrl})` }} />
     </button>
     <CSSTransition in={isOpen} timeout={300} classNames={transitions} unmountOnExit>
       <div className={classes.menu}>

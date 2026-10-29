@@ -4,9 +4,10 @@ import { useSWRInfinite } from 'swr';
 
 const MovieListContext = createContext({});
 const getKey = (pageIndex, previousPageData) => {
-  if (previousPageData && !previousPageData.next_page_url) return null; // reached the end
+  if (pageIndex === 0) return '/movies';
+  if (!previousPageData.nextCursor) return null; // reached the end
 
-  return `/movies?page=${pageIndex + 1}`; // SWR key
+  return `/movies?cursor=${encodeURIComponent(previousPageData.nextCursor)}`; // SWR key
 };
 
 export default function MovieListProvider({ children }) {

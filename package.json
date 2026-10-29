@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3003",
     "build": "next build",
     "start": "next start"
   },
@@ -16,9 +16,9 @@
     "@fortawesome/pro-regular-svg-icons": "git+ssh://git@github.com:m0nkeylabs/pro-regular-svg-icons.git",
     "@fortawesome/pro-solid-svg-icons": "git+ssh://git@github.com:m0nkeylabs/pro-solid-svg-icons.git",
     "@fortawesome/react-fontawesome": "^0.1.15",
+    "@react-oauth/google": "^0.13.5",
     "axios": "^0.21.0",
     "formik": "^2.1.4",
-    "js-cookie": "^2.2.1",
     "lodash": "^4.17.20",
     "lodash.debounce": "^4.0.8",
     "next": "^10",
@@ -26,7 +26,6 @@
     "prop-types": "^15.7.2",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "react-google-login": "^5.1.20",
     "react-redux": "^7.2.0",
     "react-tooltip": "^4.2.7",
     "react-transition-group": "^4.4.1",

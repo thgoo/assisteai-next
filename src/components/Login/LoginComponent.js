@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignIn } from '@fortawesome/pro-solid-svg-icons';
-import { faGoogle, faFacebookF } from '@fortawesome/free-brands-svg-icons';
-import { GoogleLogin } from 'react-google-login';
+import { faFacebookF } from '@fortawesome/free-brands-svg-icons';
+import { GoogleLogin } from '@react-oauth/google';
 import Modal from '../Modal';
 import classes from './style.module.scss';
 
 const LoginComponent = ({
-  modalVisible, onGoogleLogin, hideLoginModal, showLoginModal,
+  modalVisible, onGoogleLogin, onGoogleLoginError, hideLoginModal, showLoginModal,
 }) => (
   // eslint-disable-next-line
   <div className={classes.login}>
@@ -22,19 +22,13 @@ const LoginComponent = ({
         </div>
         <p>Bem-vindo ao Assiste Aí, faça login<br />escolhendo uma das opções abaixo:</p>
         <div className={classes.optionList}>
-          <div className={classes.option}>
+          <div className={`${classes.option} ${classes.googleOption}`}>
+            {/* Google Identity Services renders its own button; it returns an ID token (`credential`) */}
             <GoogleLogin
-              clientId="736877274011-im98og8tkedl1gdtvjrj6u217dpqf9rq.apps.googleusercontent.com"
-              buttonText="Google"
               onSuccess={onGoogleLogin}
-              onFailure={onGoogleLogin}
-              cookiePolicy="single_host_origin"
-              render={({ onClick, disabled }) => (
-                <button type="button" className="button" onClick={onClick} disabled={disabled}>
-                  <FontAwesomeIcon icon={faGoogle} />
-                  Google
-                </button>
-              )}
+              onError={onGoogleLoginError}
+              text="signin_with"
+              shape="pill"
             />
           </div>
           <div className={classes.option}>
@@ -53,6 +47,7 @@ LoginComponent.propTypes = {
   modalVisible: PropTypes.bool.isRequired,
   hideLoginModal: PropTypes.func.isRequired,
   onGoogleLogin: PropTypes.func.isRequired,
+  onGoogleLoginError: PropTypes.func.isRequired,
   showLoginModal: PropTypes.func.isRequired,
 };
 

@@ -17,9 +17,11 @@ export async function getStaticPaths() {
 export async function getStaticProps({ params }) {
   const [id] = params.movieId.split('-', 2);
   const res = await fetch(`${API_URL}/movies/${id}`);
-  const { data } = await res.json();
+  if (res.status === 404) return { notFound: true, revalidate: 300 };
+  if (!res.ok) throw new Error(`GET /movies/${id} failed with ${res.status}`);
+  const movie = await res.json();
 
-  return { props: { movie: data }, revalidate: 300 }; // revalidate after 5 minutes
+  return { props: { movie }, revalidate: 300 }; // revalidate after 5 minutes
 }
 
 const MoviePage = ({ movie }) => {
@@ -32,7 +34,7 @@ const MoviePage = ({ movie }) => {
   return (
     <>
       <Head>
-        <title>Assiste Aí - {movie.original_title}</title>
+        <title>Assiste Aí - {movie.originalTitle}</title>
       </Head>
       <MovieDetails movie={movie} />
     </>

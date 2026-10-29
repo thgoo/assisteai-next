@@ -5,7 +5,8 @@ import {
   createContext,
 } from 'react';
 import PropTypes from 'prop-types';
-import Cookies from 'js-cookie';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GOOGLE_CLIENT_ID } from '../../../config';
 import api from '../../services/api';
 
 const AuthContext = createContext({});
@@ -14,62 +15,50 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loginWithGoogle = async ({ accessToken: oauthAccessToken }) => {
-    const {
-      data: {
-        access_token: accessToken,
-        user: apiUser,
-      },
-    } = await api.post('auth/login/google', { token: oauthAccessToken });
-    Cookies.set('accessToken', accessToken, { expires: 60 });
-    api.defaults.headers.Authorization = `Bearer ${accessToken}`;
+  // `credential` is the Google ID token from Google Identity Services
+  const loginWithGoogle = async (credential) => {
+    const { data: { user: apiUser } } = await api.post('auth/google', { credential });
     setUser(apiUser);
   };
 
-  const logout = () => {
-    Cookies.remove('accessToken');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.post('auth/logout');
+    } catch {
+      // Log out locally even if the API could not be reached
+    } finally {
+      setUser(null);
+    }
   };
 
   useEffect(() => {
-    async function getUserFromCookie() {
-      const token = Cookies.get('accessToken');
-      if (token) {
-        api.defaults.headers.Authorization = `Bearer ${token}`;
-        try {
-          const { data: { user: me } } = await api.get('auth/me');
-          if (me) setUser(me);
-        } catch (err) {
-          try {
-            const {
-              data: {
-                access_token: accessToken,
-              },
-            } = await api.post('auth/refresh');
-            Cookies.set('accessToken', accessToken, { expires: 60 });
-            getUserFromCookie();
-          } catch {
-            logout();
-          }
-        } finally {
-          setLoading(false);
-        }
+    async function getUserFromSession() {
+      try {
+        const { data: { user: me } } = await api.get('me');
+        setUser(me);
+      } catch {
+        // 401: anonymous visitor
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     }
-    getUserFromCookie();
+    getUserFromSession();
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated: !!user,
-      user,
-      loginWithGoogle,
-      loading,
-      logout,
-    }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthContext.Provider value={{
+        isAuthenticated: !!user,
+        user,
+        loginWithGoogle,
+        loading,
+        logout,
+      }}
+      >
+        {children}
+      </AuthContext.Provider>
+    </GoogleOAuthProvider>
   );
 };
 

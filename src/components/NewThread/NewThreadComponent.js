@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/pro-solid-svg-icons';
 import NewThreadButton from './NewThreadButton';
+import { RATING_LABELS } from '../../constants/ratings';
 import classes from './style.module.scss';
 import Modal from '../Modal';
 
@@ -50,13 +51,9 @@ const NewThreadComponent = ({
               <option value="" disabled>
                 Selecione uma opção...
               </option>
-              <option value="UNMISSABLE">Imperdível</option>
-              <option value="VERY_GOOD">Muito bom</option>
-              <option value="GOOD">Bom</option>
-              <option value="COOL">Legal</option>
-              <option value="BAD">Ruinzinho</option>
-              <option value="VERY_BAD">Muito ruim</option>
-              <option value="STAY_AWAY">Fique longe</option>
+              {Object.entries(RATING_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
             </select>
             <div className={classes.suffix}>
               <FontAwesomeIcon icon={faChevronDown} />

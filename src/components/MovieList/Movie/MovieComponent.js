@@ -1,15 +1,16 @@
 import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/pro-regular-svg-icons';
+import { ratingLabel } from '../../../constants/ratings';
 import classes from './style.module.scss';
 
 const parseCategory = (category) => {
   const map = {
-    MOVIE: {
+    movie: {
       name: 'Filme',
       css: classes.movies,
     },
-    SERIE: {
+    series: {
       name: 'Série',
       css: classes.series,
     },
@@ -28,8 +29,8 @@ const addIndication = (e) => {
 
 const MovieComponent = ({ movie }) => (
   <>
-    <div className={classes.movie} style={{ backgroundImage: movie.poster_path ? `url(${movie.poster_path})` : null }}>
-      {!movie.poster_path ? <div className={classes.posterNotAvailable}>Imagem não disponível</div> : null}
+    <div className={classes.movie} style={{ backgroundImage: movie.posterUrl ? `url(${movie.posterUrl})` : null }}>
+      {!movie.posterUrl ? <div className={classes.posterNotAvailable}>Imagem não disponível</div> : null}
       <div className={classes.overlayCard}>
         <div className={classes.movieCardInfo}>
           <span className={`${classes.category} ${parseCategory(movie.category)?.css}`}>
@@ -37,11 +38,11 @@ const MovieComponent = ({ movie }) => (
           </span>
           <div className={classes.ratingContainer}>
             <div>
-              <span className={classes.rating}>{movie.average_rating}</span>
+              <span className={classes.rating}>{ratingLabel(movie.rating.average)}</span>
               Média
             </div>
             <div>
-              <span className={classes.rating}>{movie.last_rating}</span>
+              <span className={classes.rating}>{ratingLabel(movie.rating.last)}</span>
               Última
             </div>
           </div>

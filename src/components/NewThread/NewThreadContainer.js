@@ -23,7 +23,7 @@ const NewThreadContainer = () => {
 
   const handleSubmit = async (values) => {
     try {
-      await api.post('movies/ratings', values);
+      await api.post('ratings', values);
       dispatch(
         showToast({
           type: 'success',
@@ -35,7 +35,7 @@ const NewThreadContainer = () => {
       hideModal();
       refreshMovies();
     } catch ({ response }) {
-      if (response.status === 401) {
+      if (response?.status === 401) {
         dispatch(
           showToast({
             type: 'error',
@@ -49,7 +49,7 @@ const NewThreadContainer = () => {
           showToast({
             type: 'error',
             title: 'Ops!',
-            text: response.data.message,
+            text: response?.data?.detail || 'Não foi possível enviar sua avaliação. Tente de novo.',
             duration: 5000,
           })
         );

@@ -13,7 +13,7 @@ const IndexPage = ({ movie }) => (
         <title>Assiste Aí</title>
       </Head>
       <div className="backdrop-wrapper">
-        <Backdrop backdrop={movie.backdrop_path} colorless />
+        {movie?.backdropUrl ? <Backdrop backdrop={movie.backdropUrl} colorless /> : null}
       </div>
       <div className="actions-wrapper">
         <NewThread />
@@ -26,15 +26,21 @@ const IndexPage = ({ movie }) => (
 );
 
 IndexPage.propTypes = {
-  movie: PropTypes.object.isRequired,
+  movie: PropTypes.object,
+};
+
+IndexPage.defaultProps = {
+  movie: null,
 };
 
 IndexPage.getInitialProps = async () => {
-  const { data: { data: movie } } = await api.get('/movies/random');
-
-  return {
-    movie,
-  };
+  try {
+    const { data: movie } = await api.get('/movies/random');
+    return { movie };
+  } catch {
+    // 404: no eligible movie; the page works without a backdrop
+    return { movie: null };
+  }
 };
 
 export default IndexPage;
