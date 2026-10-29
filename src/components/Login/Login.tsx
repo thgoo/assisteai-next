@@ -51,7 +51,7 @@ const Login = () => {
           <div className={classes.logo}>
             <Image src="/img/logo-text.png" alt="Logo" width={792} height={173} style={{ width: 'auto' }} />
           </div>
-          <p>Bem-vindo ao Assiste Aí, faça login<br />escolhendo uma das opções abaixo:</p>
+          <p>Bem-vindo ao Assiste Aí, faça login<br />com a sua conta do Google:</p>
           <div className={classes.optionList}>
             <div className={`${classes.option} ${classes.googleOption}`}>
               {/* Google Identity Services renders its own button; it returns an ID token (`credential`) */}
@@ -60,12 +60,8 @@ const Login = () => {
                 onError={() => showLoginError()}
                 text="signin_with"
                 shape="pill"
+                theme="filled_black"
               />
-            </div>
-            <div className={classes.option}>
-              <button type="button" className="button" disabled>
-                Facebook
-              </button>
             </div>
           </div>
         </div>

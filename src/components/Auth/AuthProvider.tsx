@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }), [user, loading]);
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="pt-BR">
       <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
     </GoogleOAuthProvider>
   );
