@@ -66,7 +66,7 @@ export interface GenreCount {
 
 /** `GET /users`: people who rated something */
 export interface PublicUser {
-  id: string;
+  id: number;
   name: string;
   avatarUrl: string | null;
   ratingCount: number;

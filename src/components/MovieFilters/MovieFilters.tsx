@@ -114,7 +114,7 @@ const MovieFilters = ({ action = null }: MovieFiltersProps) => {
           label="Quem avaliou"
           value={filters.ratedBy}
           emptyLabel="Avaliados por todos"
-          options={(users?.data ?? []).map(({ id, name }) => ({ value: id, label: `Avaliados por ${name}` }))}
+          options={(users?.data ?? []).map(({ id, name }) => ({ value: String(id), label: `Avaliados por ${name}` }))}
           onChange={ratedBy => set({ ratedBy })}
         />
         {isAuthenticated ? (
