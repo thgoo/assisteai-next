@@ -130,3 +130,21 @@ test('on phones the filters fold behind a button that counts the active ones', a
   await toggle.click();
   await expect(page.getByRole('button', { name: 'Séries' })).toBeVisible();
 });
+
+test('a next page that fails stops the loading instead of retrying it in a loop', async ({ page }) => {
+  let nextPageRequests = 0;
+  await page.route('**/movies?*cursor=*', (route) => {
+    nextPageRequests++;
+    return route.fulfill({ status: 500, contentType: 'application/problem+json', body: '{"status":500}' });
+  });
+  await page.goto('/');
+  await expect(cards(page)).toHaveCount(24);
+
+  await page.mouse.wheel(0, 100_000);
+  await expect.poll(() => nextPageRequests).toBeGreaterThan(0);
+  await page.waitForTimeout(3_000);
+
+  // The first try, and at most SWR's own spaced-out retry
+  expect(nextPageRequests).toBeLessThanOrEqual(2);
+  await expect(cards(page)).toHaveCount(24);
+});

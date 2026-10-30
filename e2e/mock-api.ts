@@ -11,22 +11,26 @@ const PAGE_SIZE = 24;
 
 const RATING_KEYS: RatingKey[] = ['STAY_AWAY', 'VERY_BAD', 'BAD', 'COOL', 'GOOD', 'VERY_GOOD', 'UNMISSABLE'];
 
-// People who rated something; the e2e session is `me`
+// People who rated something; the e2e session is user 4
+const ANA = 1;
+const BRUNO = 2;
+const CARLA = 3;
+const ME = 4;
 const people: PublicUser[] = [
-  { id: 'ana', name: 'Ana', avatarUrl: null, ratingCount: 0 },
-  { id: 'bruno', name: 'Bruno', avatarUrl: null, ratingCount: 0 },
-  { id: 'carla', name: 'Carla', avatarUrl: null, ratingCount: 0 },
-  { id: 'me', name: 'Usuário E2E', avatarUrl: null, ratingCount: 0 },
+  { id: ANA, name: 'Ana', avatarUrl: null, ratingCount: 0 },
+  { id: BRUNO, name: 'Bruno', avatarUrl: null, ratingCount: 0 },
+  { id: CARLA, name: 'Carla', avatarUrl: null, ratingCount: 0 },
+  { id: ME, name: 'Usuário E2E', avatarUrl: null, ratingCount: 0 },
 ];
 
 /** Who rated each movie: Ana and Bruno all of them, Carla every 5th, the signed-in user every 4th. */
-const ratersOf = (id: number) => ['ana', 'bruno', ...(id % 5 === 0 ? ['carla'] : []), ...(id % 4 === 0 ? ['me'] : [])];
+const ratersOf = (id: number) => [ANA, BRUNO, ...(id % 5 === 0 ? [CARLA] : []), ...(id % 4 === 0 ? [ME] : [])];
 people.forEach((person) => {
   person.ratingCount = Array.from({ length: 27 }, (_, i) => ratersOf(i + 1)).filter(r => r.includes(person.id)).length;
 });
 
-const RATER_RATINGS: Record<string, RatingKey> = {
-  ana: 'UNMISSABLE', bruno: 'GOOD', carla: 'COOL', me: 'BAD',
+const RATER_RATINGS: Record<number, RatingKey> = {
+  [ANA]: 'UNMISSABLE', [BRUNO]: 'GOOD', [CARLA]: 'COOL', [ME]: 'BAD',
 };
 
 // 27 movies: a full first page (24) and a second, last page
@@ -54,7 +58,7 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     ratings: raters.map((rater, n) => ({
       id: id * 10 + n,
       rating: RATER_RATINGS[rater],
-      comment: rater === 'bruno' ? 'Bom demais' : null,
+      comment: rater === BRUNO ? 'Bom demais' : null,
       createdAt: `2026-10-0${n + 1}T12:00:00.000Z`,
       user: { name: people.find(p => p.id === rater)!.name, avatarUrl: null },
     })),
@@ -67,7 +71,7 @@ const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, 
 function listMovies(params: URLSearchParams, signedIn: boolean): MovieDetail[] | 'unauthorized' {
   const q = fold(params.get('q') ?? '');
   const minRating = params.get('minRating') as RatingKey | null;
-  const ratedBy = params.get('ratedBy');
+  const ratedBy = params.get('ratedBy') && Number(params.get('ratedBy'));
   if (params.get('unratedByMe') === 'true' && !signedIn) return 'unauthorized';
 
   const found = movies.filter(movie => (
@@ -76,7 +80,7 @@ function listMovies(params: URLSearchParams, signedIn: boolean): MovieDetail[] |
     && (!params.get('genre') || movie.genres.includes(params.get('genre')!))
     && (!minRating || RATING_KEYS.indexOf(movie.rating.average!) >= RATING_KEYS.indexOf(minRating))
     && (!ratedBy || ratersOf(movie.id).includes(ratedBy))
-    && (params.get('unratedByMe') !== 'true' || !ratersOf(movie.id).includes('me'))
+    && (params.get('unratedByMe') !== 'true' || !ratersOf(movie.id).includes(ME))
   ));
 
   const sort = params.get('sort');
@@ -166,7 +170,10 @@ Bun.serve({
     if (route === 'GET /movies') {
       const found = listMovies(url.searchParams, signedIn(req));
       if (found === 'unauthorized') return problem(req, 401, 'Faça login para continuar.');
-      const start = Number(url.searchParams.get('cursor') ?? 0);
+      // The mock's cursors are offsets; anything else is like a cursor from before an API change
+      const cursor = url.searchParams.get('cursor');
+      if (cursor !== null && !/^\d+$/.test(cursor)) return problem(req, 422, 'Cursor inválido.');
+      const start = Number(cursor ?? 0);
       const end = start + PAGE_SIZE;
       return json(req, {
         data: found.slice(start, end).map(summary),
