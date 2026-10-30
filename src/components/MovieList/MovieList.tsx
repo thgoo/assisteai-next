@@ -22,7 +22,7 @@ const MovieList = () => {
 
 const FilteredMovieList = ({ search }: { search: string }) => {
   const {
-    pages, nextPage, isValidating, failed, hasMore,
+    pages, nextPage, isValidating, isStale, failed, hasMore,
   } = useMovieList();
   const { filters, setFilters } = useMovieFilters();
   const scrollKey = scrollPositionKey(search);
@@ -117,7 +117,7 @@ const FilteredMovieList = ({ search }: { search: string }) => {
     };
   }, [saveScrollPosition]);
 
-  if (!pages?.[0]?.data.length) {
+  if (!pages?.[0]?.data.length && !isStale) {
     const hasFilters = countActiveFilters(filters) > 0;
     let text = 'Carregando...';
     if (failed) text = 'Não foi possível carregar a lista.';
@@ -140,8 +140,8 @@ const FilteredMovieList = ({ search }: { search: string }) => {
   }
 
   return (
-    <div className={classes.movieList}>
-      {pages.map((page, i) => (
+    <div className={`${classes.movieList} ${isStale ? classes.isStale : ''}`} aria-busy={isStale}>
+      {(pages ?? []).map((page, i) => (
         <MovieListPage
           // Pages only ever append, and a refresh keeps their order
           key={i}
@@ -151,7 +151,7 @@ const FilteredMovieList = ({ search }: { search: string }) => {
           onOpenMovie={onOpenMovie}
         />
       ))}
-      {isLoading ? (
+      {isLoading && !isStale ? (
         <div className={classes.gridItem}>
           <div className={`${classes.itemWrapper} ${classes.isSpinner}`}>
             <Spinner />

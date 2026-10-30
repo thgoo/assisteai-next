@@ -5,7 +5,7 @@ import {
 } from 'react';
 import useSWRInfinite from 'swr/infinite';
 import { ApiError } from '@/lib/api';
-import { filtersToApiQuery } from '@/lib/filters';
+import { filtersToQuery } from '@/lib/filters';
 import type { MovieSummary, Page } from '@/lib/types';
 import useAuth from '../Auth/AuthProvider';
 import useMovieFilters from '../MovieFilters/useMovieFilters';
@@ -13,6 +13,8 @@ import useMovieFilters from '../MovieFilters/useMovieFilters';
 interface MovieListContextValue {
   pages: Page<MovieSummary>[] | undefined;
   isValidating: boolean;
+  /** The pages shown are the previous filters' while the new ones load */
+  isStale: boolean;
   /** The list couldn't load */
   failed: boolean;
   hasMore: boolean;
@@ -32,7 +34,7 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
   const { filters } = useMovieFilters();
   const { isAuthenticated } = useAuth();
   // "Only the ones I haven't rated" needs a session (the API answers 401 without one)
-  const query = filtersToApiQuery({ ...filters, unratedByMe: filters.unratedByMe && isAuthenticated });
+  const query = filtersToQuery({ ...filters, unratedByMe: filters.unratedByMe && isAuthenticated });
 
   const getKey = useCallback((pageIndex: number, previousPage: Page<MovieSummary> | null) => {
     if (pageIndex > 0 && !previousPage?.nextCursor) return null; // reached the end
@@ -44,7 +46,7 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
   }, [query]);
 
   const {
-    data, error, mutate, size, setSize, isValidating,
+    data, error, mutate, size, setSize, isValidating, isLoading,
   } = useSWRInfinite<Page<MovieSummary>>(getKey, {
     // The server renders the unfiltered list only
     fallbackData: firstPage && !query ? [firstPage] : undefined,
@@ -53,6 +55,10 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     // cache got the new filters' pages. A list without cache is fetched at once, consistently; focus and `refresh()`
     // still refetch.
     revalidateIfStale: false,
+    // While new filters load, the previous results stay (dimmed) instead of the list collapsing to "Carregando...".
+    // Not for the unfiltered list, which has the server's first page at hand: SWR would prefer the previous results
+    // to it, and never fetch to replace them
+    keepPreviousData: !firstPage || !!query,
     onError: (err, key) => {
       // A cursor from before an API change (it now carries the sort): start the list over from the first page
       if (err instanceof ApiError && err.status === 422 && key.includes('cursor=')) {
@@ -64,12 +70,14 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
   const value = useMemo(() => ({
     pages: data,
     isValidating,
+    // `isLoading`: nothing in the cache for these filters yet, so `data` is the previous filters'
+    isStale: isLoading && !!data,
     failed: !!error && !data,
     // After a failed page, no more automatic loading: the bottom check would retry it in a loop
     hasMore: !error && (!data || data[data.length - 1].nextCursor !== null),
     nextPage: () => setSize(size + 1),
     refresh: () => mutate(),
-  }), [data, error, isValidating, size, setSize, mutate]);
+  }), [data, error, isValidating, isLoading, size, setSize, mutate]);
 
   return <MovieListContext.Provider value={value}>{children}</MovieListContext.Provider>;
 }
