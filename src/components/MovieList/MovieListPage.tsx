@@ -7,7 +7,7 @@ import Movie from './Movie/Movie';
 import classes from './style.module.scss';
 
 /** How long a new page stays hidden waiting for its posters; then the slow ones show a placeholder */
-const POSTERS_TIMEOUT_MS = 1000;
+export const POSTERS_TIMEOUT_MS = 1000;
 
 interface MovieListPageProps {
   movies: MovieSummary[];

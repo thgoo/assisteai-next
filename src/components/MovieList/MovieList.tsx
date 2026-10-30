@@ -6,12 +6,15 @@ import {
 import { countActiveFilters, DEFAULT_FILTERS } from '@/lib/filters';
 import useMovieFilters, { scrollPositionKey } from '../MovieFilters/useMovieFilters';
 import Spinner from '../Spinner/Spinner';
+import { preloadPosters } from './Movie/posters';
 import { useMovieList } from './MovieListProvider';
-import MovieListPage from './MovieListPage';
+import MovieListPage, { POSTERS_TIMEOUT_MS } from './MovieListPage';
 import classes from './style.module.scss';
 
 /** How long to wait for the list to be tall enough to scroll back to the saved position */
 const RESTORE_TIMEOUT_MS = 2000;
+/** New filters that answer faster than this swap the results without dimming the previous ones first */
+const DIM_DELAY_MS = 200;
 
 /** One list per set of filters (`key`), each with its own pages and scroll position. */
 const MovieList = () => {
@@ -22,8 +25,33 @@ const MovieList = () => {
 
 const FilteredMovieList = ({ search }: { search: string }) => {
   const {
-    pages, nextPage, isValidating, isStale, failed, hasMore,
+    pages: currentPages, nextPage, isValidating, isStale, failed, hasMore,
   } = useMovieList();
+  // New filters keep the previous results on screen until theirs arrive with the first page's posters, then swap them
+  // in one go, instead of cards blinking through the loading states
+  const [previousPages, setPreviousPages] = useState(isStale ? currentPages : null);
+  const waiting = previousPages !== null;
+  const pages = previousPages ?? currentPages;
+  const [dimmed, setDimmed] = useState(false);
+
+  useEffect(() => {
+    if (!previousPages || isStale) return undefined;
+    let cancelled = false;
+    const posters = (currentPages?.[0]?.data ?? []).flatMap(movie => (movie.posterUrl ? [movie.posterUrl] : []));
+    preloadPosters(posters, POSTERS_TIMEOUT_MS).then(() => {
+      if (!cancelled) setPreviousPages(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [previousPages, isStale, currentPages]);
+
+  useEffect(() => {
+    if (!waiting) return undefined;
+    const timeout = setTimeout(() => setDimmed(true), DIM_DELAY_MS);
+    return () => clearTimeout(timeout);
+  }, [waiting]);
+
   const { filters, setFilters } = useMovieFilters();
   const scrollKey = scrollPositionKey(search);
   // Pages the scroll asked for, hidden while their posters load. Pages from the server or SWR's cache (coming back to
@@ -31,7 +59,7 @@ const FilteredMovieList = ({ search }: { search: string }) => {
   const [scrolledPages, setScrolledPages] = useState<number[]>([]);
   const [pendingPages, setPendingPages] = useState(0);
   const onPendingChange = useCallback((delta: number) => setPendingPages(count => count + delta), []);
-  const isLoading = isValidating || pendingPages > 0;
+  const isLoading = waiting || isValidating || pendingPages > 0;
   const busy = useRef(isLoading);
   // Until the saved position is back, scroll events neither save it nor load more
   const restoring = useRef(true);
@@ -117,7 +145,7 @@ const FilteredMovieList = ({ search }: { search: string }) => {
     };
   }, [saveScrollPosition]);
 
-  if (!pages?.[0]?.data.length && !isStale) {
+  if (!pages?.[0]?.data.length && !waiting) {
     const hasFilters = countActiveFilters(filters) > 0;
     let text = 'Carregando...';
     if (failed) text = 'Não foi possível carregar a lista.';
@@ -140,18 +168,18 @@ const FilteredMovieList = ({ search }: { search: string }) => {
   }
 
   return (
-    <div className={`${classes.movieList} ${isStale ? classes.isStale : ''}`} aria-busy={isStale}>
+    <div className={`${classes.movieList} ${waiting && dimmed ? classes.isStale : ''}`} aria-busy={waiting}>
       {(pages ?? []).map((page, i) => (
         <MovieListPage
           // Pages only ever append, and a refresh keeps their order
-          key={i}
+          key={waiting ? `previous-${i}` : i}
           movies={page.data}
           waitForPosters={scrolledPages.includes(i)}
           onPendingChange={onPendingChange}
           onOpenMovie={onOpenMovie}
         />
       ))}
-      {isLoading && !isStale ? (
+      {isLoading && !waiting ? (
         <div className={classes.gridItem}>
           <div className={`${classes.itemWrapper} ${classes.isSpinner}`}>
             <Spinner />

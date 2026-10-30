@@ -88,3 +88,46 @@ for (const way of ['back button', 'logo'] as const) {
     await expect.poll(cardTop).toBe(before);
   });
 }
+
+/** Filters to "Muito Ruim", ids 25–27: all with posters */
+async function filterVeryBad(page: Page) {
+  await page.getByRole('button', { name: /^Avaliação/ }).click();
+  await page.getByLabel('Muito Ruim', { exact: true }).check();
+}
+
+test('new filters swap the results in one go, posters included, without dimming a quick answer', async ({ page }) => {
+  servePosters(page, 'hold')();
+  await page.goto('/');
+  await expect(card(page, 1)).toBeVisible();
+  // Whether the list was ever dimmed, or a card ever shimmered
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      if (document.querySelector('[class*="_isStale"]')) document.body.dataset.dimmed = 'true';
+      if (document.querySelector('[class*="_isLoading"]')) document.body.dataset.shimmered = 'true';
+    });
+    observer.observe(document.body, {
+      subtree: true, childList: true, attributes: true, attributeFilter: ['class'],
+    });
+  });
+
+  await filterVeryBad(page);
+  await expect(card(page, 25)).toBeVisible();
+  await expect(card(page, 1)).toHaveCount(0);
+  // Already loaded on arrival: no shimmer, no fade
+  expect(await naturalWidth(page, 25)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => ({ ...document.body.dataset }))).toEqual({});
+});
+
+test('new filters keep the previous results, dimmed, while their posters load, for 1 s at most', async ({ page }) => {
+  servePosters(page, 'hold');
+  await page.goto('/');
+  await expect(card(page, 1)).toBeVisible();
+
+  await filterVeryBad(page);
+  await expect(page.locator('[class*="_isStale"]')).toBeVisible();
+  await expect(card(page, 1)).toBeVisible();
+
+  await expect(card(page, 25)).toBeVisible({ timeout: 3_000 });
+  await expect(card(page, 1)).toHaveCount(0);
+  await expect(page.locator('[class*="_isStale"]')).toHaveCount(0);
+});
