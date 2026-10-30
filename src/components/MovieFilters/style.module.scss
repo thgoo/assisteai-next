@@ -156,10 +156,71 @@ $blue: #4d69b4;
   padding: 0 1.4rem;
   border-radius: 5px;
 
-  &[aria-pressed='true'] {
+  &[aria-pressed='true'],
+  &.isActive {
     background-color: rgba($blue, 0.35);
     color: #ffffff;
   }
+
+  &.hasChevron {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-right: 1.1rem;
+
+    svg {
+      color: #8b8c8f;
+    }
+  }
+}
+
+// The rating averages' panel, under its chip
+.popoverField {
+  position: relative;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 0;
+  min-width: 200px;
+  margin: 0;
+  padding: 0.6rem 0;
+  border: 0;
+  border-radius: 5px;
+  background-color: #36393f;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+}
+
+.checkOption {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1.4rem;
+  font-size: 1.3rem;
+  color: #ffffff;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: $blue;
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .select {

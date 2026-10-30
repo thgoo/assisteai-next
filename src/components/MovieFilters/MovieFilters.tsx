@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback, useEffect, useId, useRef, useState,
+} from 'react';
 import useSWR from 'swr';
 import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
 import {
@@ -23,10 +25,8 @@ const CATEGORIES: { value: Category | null; label: string }[] = [
   { value: 'series', label: 'Séries' },
 ];
 
-// "At least": the lowest one would keep everything, so it isn't offered
-const MIN_RATINGS = (Object.keys(RATING_LABELS) as RatingKey[])
-  .filter(key => key !== 'STAY_AWAY')
-  .map(key => ({ value: key, label: key === 'UNMISSABLE' ? RATING_LABELS[key] : `${RATING_LABELS[key]} ou melhor` }));
+// Best first
+const RATING_ORDER = Object.keys(RATING_LABELS) as RatingKey[];
 
 const SORTS: { value: MovieSort; label: string }[] = [
   { value: 'recent', label: 'Mais recentes' },
@@ -103,13 +103,7 @@ const MovieFilters = ({ action = null }: MovieFiltersProps) => {
             .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))}
           onChange={genre => set({ genre })}
         />
-        <FilterSelect
-          label="Avaliação"
-          value={filters.minRating}
-          emptyLabel="Qualquer avaliação"
-          options={MIN_RATINGS}
-          onChange={minRating => set({ minRating })}
-        />
+        <AverageFilter value={filters.averages} onChange={averages => set({ averages })} />
         <FilterSelect
           label="Quem avaliou"
           value={filters.ratedBy}
@@ -179,6 +173,71 @@ const SearchBox = ({ value, onSearch }: SearchBoxProps) => {
         data-1p-ignore
         data-lpignore="true"
       />
+    </div>
+  );
+};
+
+interface AverageFilterProps {
+  value: RatingKey[];
+  onChange: (value: RatingKey[]) => void;
+}
+
+/** Pick any of the rating averages; none means any. */
+const AverageFilter = ({ value, onChange }: AverageFilterProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const panelId = useId();
+
+  // Clicks outside and Esc close it
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const onMouseDown = (evt: MouseEvent) => {
+      if (!ref.current?.contains(evt.target as Node)) setIsOpen(false);
+    };
+    const onKeyDown = (evt: KeyboardEvent) => {
+      if (evt.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen]);
+
+  let label = 'Qualquer avaliação';
+  if (value.length === 1) label = RATING_LABELS[value[0]];
+  else if (value.length > 1) label = `Avaliação (${value.length})`;
+
+  const toggle = (key: RatingKey) => onChange(
+    RATING_ORDER.filter(k => (k === key ? !value.includes(k) : value.includes(k))),
+  );
+
+  return (
+    <div className={classes.popoverField} ref={ref}>
+      <button
+        type="button"
+        className={`${classes.chip} ${classes.hasChevron} ${value.length ? classes.isActive : ''}`}
+        aria-label={`Avaliação: ${label}`}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={() => setIsOpen(open => !open)}
+      >
+        {label}
+        <ChevronDown />
+      </button>
+      {isOpen ? (
+        <fieldset id={panelId} className={classes.popover}>
+          <legend className={classes.visuallyHidden}>Médias de avaliação</legend>
+          {RATING_ORDER.map(key => (
+            <label key={key} className={classes.checkOption}>
+              <input type="checkbox" checked={value.includes(key)} onChange={() => toggle(key)} />
+              {RATING_LABELS[key]}
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
     </div>
   );
 };
