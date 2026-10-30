@@ -10,6 +10,8 @@ const GENRE_LABELS: Record<string, string> = {
   'Drama': 'Drama',
   'Family': 'Família',
   'Fantasy': 'Fantasia',
+  // Retired by TMDb, still on old titles
+  'Foreign': 'Estrangeiro',
   'History': 'História',
   'Horror': 'Terror',
   'Kids': 'Infantil',
