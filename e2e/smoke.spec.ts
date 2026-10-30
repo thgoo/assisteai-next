@@ -60,7 +60,7 @@ test('movie page shows the movie and its ratings', async ({ page }) => {
 
   await expect(page).toHaveTitle('Assiste Aí - Movie 2');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 2');
-  await expect(page.getByText('Sci-Fi & Fantasy')).toBeVisible();
+  await expect(page.getByText('Ficção científica e Fantasia')).toBeVisible();
   await expect(page.getByText('Bruno')).toBeVisible();
   await expect(page.getByText('Imperdível').first()).toBeVisible();
 });

@@ -1,7 +1,7 @@
 // A stand-in for the API (../assisteai-api) with fixed data, so the e2e tests need no database.
 // The shapes follow ../assisteai-back/docs/rewrite/05-api-design.md.
 import type {
-  MovieDetail, MovieSummary, RatingKey, TitleResult, User,
+  MovieDetail, MovieSummary, PublicUser, RatingKey, TitleResult, User,
 } from '../src/lib/types';
 
 const PORT = Number(process.env.MOCK_API_PORT || 3999);
@@ -11,40 +11,83 @@ const PAGE_SIZE = 24;
 
 const RATING_KEYS: RatingKey[] = ['STAY_AWAY', 'VERY_BAD', 'BAD', 'COOL', 'GOOD', 'VERY_GOOD', 'UNMISSABLE'];
 
+// People who rated something; the e2e session is `me`
+const people: PublicUser[] = [
+  { id: 'ana', name: 'Ana', avatarUrl: null, ratingCount: 0 },
+  { id: 'bruno', name: 'Bruno', avatarUrl: null, ratingCount: 0 },
+  { id: 'carla', name: 'Carla', avatarUrl: null, ratingCount: 0 },
+  { id: 'me', name: 'Usuário E2E', avatarUrl: null, ratingCount: 0 },
+];
+
+/** Who rated each movie: Ana and Bruno all of them, Carla every 5th, the signed-in user every 4th. */
+const ratersOf = (id: number) => ['ana', 'bruno', ...(id % 5 === 0 ? ['carla'] : []), ...(id % 4 === 0 ? ['me'] : [])];
+people.forEach((person) => {
+  person.ratingCount = Array.from({ length: 27 }, (_, i) => ratersOf(i + 1)).filter(r => r.includes(person.id)).length;
+});
+
+const RATER_RATINGS: Record<string, RatingKey> = {
+  ana: 'UNMISSABLE', bruno: 'GOOD', carla: 'COOL', me: 'BAD',
+};
+
 // 27 movies: a full first page (24) and a second, last page
 const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
   const id = i + 1;
+  const raters = ratersOf(id);
   return {
     id,
     slug: `movie-${id}`,
     category: id % 3 === 0 ? 'series' : 'movie',
-    title: `Filme ${id}`,
+    // One accented title, for the accent-insensitive search
+    title: id === 7 ? 'Ação em Dobro' : `Filme ${id}`,
     originalTitle: `Movie ${id}`,
     year: 2000 + id,
     // Only the second page has posters; e2e/posters.spec.ts serves them from the browser
     posterUrl: id > PAGE_SIZE ? `https://image.tmdb.org/t/p/w500/e2e-poster-${id}.jpg` : null,
     backdropUrl: null,
-    rating: { count: 2, average: 'VERY_GOOD', last: RATING_KEYS[id % RATING_KEYS.length] },
-    genres: ['Drama', 'Sci-Fi & Fantasy'],
+    rating: {
+      count: raters.length,
+      average: id <= 20 ? 'VERY_GOOD' : 'COOL',
+      last: RATING_KEYS[id % RATING_KEYS.length],
+    },
+    genres: [id % 2 === 0 ? 'Drama' : 'Comedy', 'Sci-Fi & Fantasy'],
     description: `Description of movie ${id}.`,
-    ratings: [
-      {
-        id: id * 10,
-        rating: 'UNMISSABLE',
-        comment: null,
-        createdAt: '2026-10-01T12:00:00.000Z',
-        user: { name: 'Ana', avatarUrl: null },
-      },
-      {
-        id: id * 10 + 1,
-        rating: 'GOOD',
-        comment: 'Bom demais',
-        createdAt: '2026-10-02T12:00:00.000Z',
-        user: { name: 'Bruno', avatarUrl: null },
-      },
-    ],
+    ratings: raters.map((rater, n) => ({
+      id: id * 10 + n,
+      rating: RATER_RATINGS[rater],
+      comment: rater === 'bruno' ? 'Bom demais' : null,
+      createdAt: `2026-10-0${n + 1}T12:00:00.000Z`,
+      user: { name: people.find(p => p.id === rater)!.name, avatarUrl: null },
+    })),
   };
 });
+
+const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
+/** `GET /movies`' filters and sorts (the API's contract, on the fixtures) */
+function listMovies(params: URLSearchParams, signedIn: boolean): MovieDetail[] | 'unauthorized' {
+  const q = fold(params.get('q') ?? '');
+  const minRating = params.get('minRating') as RatingKey | null;
+  const ratedBy = params.get('ratedBy');
+  if (params.get('unratedByMe') === 'true' && !signedIn) return 'unauthorized';
+
+  const found = movies.filter(movie => (
+    (!q || fold(`${movie.title} ${movie.originalTitle}`).includes(q))
+    && (!params.get('category') || movie.category === params.get('category'))
+    && (!params.get('genre') || movie.genres.includes(params.get('genre')!))
+    && (!minRating || RATING_KEYS.indexOf(movie.rating.average!) >= RATING_KEYS.indexOf(minRating))
+    && (!ratedBy || ratersOf(movie.id).includes(ratedBy))
+    && (params.get('unratedByMe') !== 'true' || !ratersOf(movie.id).includes('me'))
+  ));
+
+  const sort = params.get('sort');
+  if (sort === 'rating') {
+    found.sort((a, b) => RATING_KEYS.indexOf(b.rating.average!) - RATING_KEYS.indexOf(a.rating.average!)
+      || b.rating.count - a.rating.count || b.id - a.id);
+  } else if (sort === 'popular') {
+    found.sort((a, b) => b.rating.count - a.rating.count || b.id - a.id);
+  }
+  return found;
+}
 
 // What `GET /titles/search` finds (TMDb's search, in the API)
 const titles: TitleResult[] = [
@@ -121,13 +164,22 @@ Bun.serve({
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(req) });
 
     if (route === 'GET /movies') {
+      const found = listMovies(url.searchParams, signedIn(req));
+      if (found === 'unauthorized') return problem(req, 401, 'Faça login para continuar.');
       const start = Number(url.searchParams.get('cursor') ?? 0);
       const end = start + PAGE_SIZE;
       return json(req, {
-        data: movies.slice(start, end).map(summary),
-        nextCursor: end < movies.length ? String(end) : null,
+        data: found.slice(start, end).map(summary),
+        nextCursor: end < found.length ? String(end) : null,
       });
     }
+
+    if (route === 'GET /genres') {
+      const names = [...new Set(movies.flatMap(movie => movie.genres))].sort();
+      return json(req, { data: names.map(name => ({ name, count: movies.filter(m => m.genres.includes(name)).length })) });
+    }
+
+    if (route === 'GET /users') return json(req, { data: people });
 
     // With a backdrop, like production (it takes space above the list, which scroll restoration depends on)
     if (route === 'GET /movies/random') return json(req, { ...movies[0], backdropUrl: `http://localhost:${PORT}/backdrop.png` });
