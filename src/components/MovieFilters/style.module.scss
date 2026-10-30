@@ -1,0 +1,234 @@
+@use 'sass:color';
+
+// Tones of the site's fields and buttons (NewThread's form, .button-alt)
+$field: #292b2f;
+$chip: #2f3136;
+$blue: #4d69b4;
+
+.movieFilters {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  // Scrolled into view when filters change (useMovieFilters): clear of the page's top edge
+  scroll-margin-top: 1.5rem;
+}
+
+.searchRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+
+  @media screen and (min-width: 768px) {
+    flex-wrap: nowrap;
+  }
+}
+
+.search {
+  position: relative;
+  flex: 1 1 100%;
+
+  @media screen and (min-width: 768px) {
+    flex-basis: auto;
+  }
+
+  input {
+    width: 100%;
+    height: 42px;
+    padding: 0 2rem 0 4.2rem;
+    border: 0;
+    border-radius: 5px;
+    background-color: $field;
+    color: #ffffff;
+    transition: background-color 0.3s;
+
+    &::placeholder {
+      color: #606265;
+      opacity: 1;
+    }
+
+    &:focus {
+      outline: 0;
+      background-color: color.adjust($field, $lightness: 2%);
+    }
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 1.5rem;
+  transform: translateY(-50%);
+  color: #606265;
+  pointer-events: none;
+}
+
+// Phones only: shows or hides the options
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 42px;
+  padding: 0 1.5rem;
+  border: 0;
+  border-radius: 5px;
+  background-color: $chip;
+  color: #ffffff;
+  cursor: pointer;
+
+  &.isActive {
+    box-shadow: inset 0 0 0 1px rgba($blue, 0.8);
+  }
+
+  @media screen and (min-width: 768px) {
+    display: none;
+  }
+}
+
+.count {
+  min-width: 18px;
+  padding: 0 0.5rem;
+  border-radius: 9px;
+  background-color: $blue;
+  font-size: 1.1rem;
+  line-height: 18px;
+  text-align: center;
+}
+
+.options {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+
+  &.isOpen {
+    display: flex;
+  }
+
+  @media screen and (min-width: 768px) {
+    display: flex;
+  }
+}
+
+// Chips: the category buttons, the selects and the toggle share one look
+.segmented button,
+.chip,
+.select select {
+  height: 36px;
+  border: 0;
+  background-color: $chip;
+  color: #c9cacc;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: color.adjust($chip, $lightness: 4%);
+    color: #ffffff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($blue, 0.8);
+    outline-offset: 1px;
+  }
+}
+
+.segmented {
+  display: flex;
+  border-radius: 5px;
+  overflow: hidden;
+
+  button {
+    padding: 0 1.4rem;
+
+    + button {
+      border-left: 1px solid rgba(0, 0, 0, 0.25);
+    }
+
+    &[aria-pressed='true'] {
+      background-color: rgba($blue, 0.35);
+      color: #ffffff;
+    }
+  }
+}
+
+.chip {
+  padding: 0 1.4rem;
+  border-radius: 5px;
+
+  &[aria-pressed='true'] {
+    background-color: rgba($blue, 0.35);
+    color: #ffffff;
+  }
+}
+
+.select {
+  position: relative;
+
+  select {
+    // The browser sizes a select to its longest option ("Ficção científica e Fantasia")
+    max-width: 200px;
+    padding: 0 3.2rem 0 1.4rem;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    option {
+      background-color: $field;
+      color: #ffffff;
+    }
+  }
+
+  &.isActive select {
+    background-color: rgba($blue, 0.35);
+    color: #ffffff;
+  }
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: 1.1rem;
+  transform: translateY(-50%);
+  color: #8b8c8f;
+  pointer-events: none;
+}
+
+.onWideScreens {
+  display: none;
+
+  @media screen and (min-width: 768px) {
+    display: block;
+    flex: none;
+  }
+
+  // As tall as the search box beside it
+  select {
+    height: 42px;
+  }
+}
+
+.onPhones {
+  @media screen and (min-width: 768px) {
+    display: none;
+  }
+}
+
+.clear {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.8rem;
+  border: 0;
+  background: none;
+  color: #8ea2d8;
+  font-size: 1.3rem;
+  cursor: pointer;
+
+  &:hover {
+    color: #ffffff;
+  }
+}

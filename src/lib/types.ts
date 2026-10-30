@@ -57,3 +57,17 @@ export interface TitleResult {
   posterUrl: string | null;
   ratedByMe: boolean;
 }
+
+/** `GET /genres`: genres of rated movies, as stored (TMDb's English names) */
+export interface GenreCount {
+  name: string;
+  count: number;
+}
+
+/** `GET /users`: people who rated something */
+export interface PublicUser {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  ratingCount: number;
+}

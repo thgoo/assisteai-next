@@ -3,19 +3,29 @@
 import {
   useCallback, useEffect, useRef, useState,
 } from 'react';
+import { countActiveFilters, DEFAULT_FILTERS } from '@/lib/filters';
+import useMovieFilters, { scrollPositionKey } from '../MovieFilters/useMovieFilters';
 import Spinner from '../Spinner/Spinner';
 import { useMovieList } from './MovieListProvider';
 import MovieListPage from './MovieListPage';
 import classes from './style.module.scss';
 
-const SCROLL_POSITION_KEY = 'scrollPosition';
 /** How long to wait for the list to be tall enough to scroll back to the saved position */
 const RESTORE_TIMEOUT_MS = 2000;
 
+/** One list per set of filters (`key`), each with its own pages and scroll position. */
 const MovieList = () => {
+  const { search } = useMovieFilters();
+
+  return <FilteredMovieList key={search} search={search} />;
+};
+
+const FilteredMovieList = ({ search }: { search: string }) => {
   const {
-    pages, nextPage, isValidating, hasMore,
+    pages, nextPage, isValidating, failed, hasMore,
   } = useMovieList();
+  const { filters, setFilters } = useMovieFilters();
+  const scrollKey = scrollPositionKey(search);
   // Pages the scroll asked for, hidden while their posters load. Pages from the server or SWR's cache (coming back to
   // the list) show at once, so the scroll position can be restored
   const [scrolledPages, setScrolledPages] = useState<number[]>([]);
@@ -57,8 +67,8 @@ const MovieList = () => {
   const leaving = useRef(false);
   const saveScrollPosition = useCallback(() => {
     if (leaving.current || restoring.current) return;
-    window.sessionStorage.setItem(SCROLL_POSITION_KEY, String(document.documentElement.scrollTop));
-  }, []);
+    window.sessionStorage.setItem(scrollKey, String(document.documentElement.scrollTop));
+  }, [scrollKey]);
   const onOpenMovie = useCallback(() => {
     saveScrollPosition();
     leaving.current = true;
@@ -67,7 +77,7 @@ const MovieList = () => {
   /** Scrolls back once the list is tall enough (cached pages can arrive right after mounting), or anyway when `force`. */
   const restoreScrollPosition = useCallback((force: boolean) => {
     if (!restoring.current) return;
-    const saved = window.sessionStorage.getItem(SCROLL_POSITION_KEY);
+    const saved = window.sessionStorage.getItem(scrollKey);
     const maxScroll = document.documentElement.offsetHeight - window.innerHeight;
     if (saved !== null && Number(saved) > maxScroll && !force) return;
 
@@ -75,7 +85,7 @@ const MovieList = () => {
     if (saved !== null) document.documentElement.scrollTop = Number(saved);
     restoring.current = false;
     loadMoreAtBottom();
-  }, [loadMoreAtBottom]);
+  }, [loadMoreAtBottom, scrollKey]);
 
   // The give-up timer below must call the latest one, which knows the current page count
   const restoreRef = useRef(restoreScrollPosition);
@@ -108,9 +118,23 @@ const MovieList = () => {
   }, [saveScrollPosition]);
 
   if (!pages?.[0]?.data.length) {
+    const hasFilters = countActiveFilters(filters) > 0;
+    let text = 'Carregando...';
+    if (failed) text = 'Não foi possível carregar a lista.';
+    else if (pages) text = hasFilters ? 'Nenhum filme encontrado com esses filtros.' : 'Nenhum filme indicado.';
+
     return (
       <div className={`${classes.listText} magic-border light`}>
-        {pages ? 'Nenhum filme indicado.' : 'Carregando...'}
+        {text}
+        {pages && hasFilters ? (
+          <button
+            type="button"
+            className={classes.clearFilters}
+            onClick={() => setFilters({ ...DEFAULT_FILTERS, sort: filters.sort })}
+          >
+            Limpar filtros
+          </button>
+        ) : null}
       </div>
     );
   }

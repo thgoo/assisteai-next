@@ -39,6 +39,16 @@
   text-align: center;
 }
 
+.clearFilters {
+  margin-left: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #8ea2d8;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .itemWrapper {
   position: absolute;
   top: 0;

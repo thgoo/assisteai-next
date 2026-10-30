@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import Backdrop, { BackdropPlaceholder } from '@/components/Backdrop/Backdrop';
+import MovieFilters from '@/components/MovieFilters/MovieFilters';
 import MovieList from '@/components/MovieList/MovieList';
 import MovieListProvider from '@/components/MovieList/MovieListProvider';
 import NewThread from '@/components/NewThread/NewThread';
@@ -24,7 +25,7 @@ export default async function HomePage() {
           </Suspense>
         </div>
         <div className="actions-wrapper">
-          <NewThread />
+          <MovieFilters action={<NewThread />} />
         </div>
         <div className="movie-list-wrapper">
           <MovieList />

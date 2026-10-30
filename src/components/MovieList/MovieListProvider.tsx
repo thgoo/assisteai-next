@@ -1,25 +1,25 @@
 'use client';
 
-import { createContext, useContext, useMemo } from 'react';
+import {
+  createContext, useCallback, useContext, useMemo,
+} from 'react';
 import useSWRInfinite from 'swr/infinite';
+import { filtersToApiQuery } from '@/lib/filters';
 import type { MovieSummary, Page } from '@/lib/types';
+import useAuth from '../Auth/AuthProvider';
+import useMovieFilters from '../MovieFilters/useMovieFilters';
 
 interface MovieListContextValue {
   pages: Page<MovieSummary>[] | undefined;
   isValidating: boolean;
+  /** The list couldn't load */
+  failed: boolean;
   hasMore: boolean;
   nextPage: () => void;
   refresh: () => void;
 }
 
 const MovieListContext = createContext<MovieListContextValue | null>(null);
-
-const getKey = (pageIndex: number, previousPage: Page<MovieSummary> | null) => {
-  if (pageIndex === 0) return '/movies';
-  if (!previousPage?.nextCursor) return null; // reached the end
-
-  return `/movies?cursor=${encodeURIComponent(previousPage.nextCursor)}`;
-};
 
 interface MovieListProviderProps {
   children: React.ReactNode;
@@ -28,17 +28,40 @@ interface MovieListProviderProps {
 }
 
 export default function MovieListProvider({ children, firstPage }: MovieListProviderProps) {
+  const { filters } = useMovieFilters();
+  const { isAuthenticated } = useAuth();
+  // "Only the ones I haven't rated" needs a session (the API answers 401 without one)
+  const query = filtersToApiQuery({ ...filters, unratedByMe: filters.unratedByMe && isAuthenticated });
+
+  const getKey = useCallback((pageIndex: number, previousPage: Page<MovieSummary> | null) => {
+    if (pageIndex > 0 && !previousPage?.nextCursor) return null; // reached the end
+
+    const params = new URLSearchParams(query);
+    if (previousPage?.nextCursor) params.set('cursor', previousPage.nextCursor);
+    const search = params.toString();
+    return search ? `/movies?${search}` : '/movies';
+  }, [query]);
+
   const {
-    data, mutate, size, setSize, isValidating,
-  } = useSWRInfinite<Page<MovieSummary>>(getKey, { fallbackData: firstPage ? [firstPage] : undefined });
+    data, error, mutate, size, setSize, isValidating,
+  } = useSWRInfinite<Page<MovieSummary>>(getKey, {
+    // The server renders the unfiltered list only
+    fallbackData: firstPage && !query ? [firstPage] : undefined,
+    // No automatic refetch of a list already in the cache. SWR defers that refetch to the next frame and runs it with
+    // the latest `getKey`: when the filters change in between (at hydration, or on a quick change), the old filters'
+    // cache got the new filters' pages. A list without cache is fetched at once, consistently; focus and `refresh()`
+    // still refetch.
+    revalidateIfStale: false,
+  });
 
   const value = useMemo(() => ({
     pages: data,
     isValidating,
+    failed: !!error && !data,
     hasMore: !data || data[data.length - 1].nextCursor !== null,
     nextPage: () => setSize(size + 1),
     refresh: () => mutate(),
-  }), [data, isValidating, size, setSize, mutate]);
+  }), [data, error, isValidating, size, setSize, mutate]);
 
   return <MovieListContext.Provider value={value}>{children}</MovieListContext.Provider>;
 }
