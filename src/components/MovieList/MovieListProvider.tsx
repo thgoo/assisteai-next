@@ -4,6 +4,7 @@ import {
   createContext, useCallback, useContext, useMemo,
 } from 'react';
 import useSWRInfinite from 'swr/infinite';
+import { ApiError } from '@/lib/api';
 import { filtersToApiQuery } from '@/lib/filters';
 import type { MovieSummary, Page } from '@/lib/types';
 import useAuth from '../Auth/AuthProvider';
@@ -52,13 +53,20 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     // cache got the new filters' pages. A list without cache is fetched at once, consistently; focus and `refresh()`
     // still refetch.
     revalidateIfStale: false,
+    onError: (err, key) => {
+      // A cursor from before an API change (it now carries the sort): start the list over from the first page
+      if (err instanceof ApiError && err.status === 422 && key.includes('cursor=')) {
+        setSize(1).then(() => mutate());
+      }
+    },
   });
 
   const value = useMemo(() => ({
     pages: data,
     isValidating,
     failed: !!error && !data,
-    hasMore: !data || data[data.length - 1].nextCursor !== null,
+    // After a failed page, no more automatic loading: the bottom check would retry it in a loop
+    hasMore: !error && (!data || data[data.length - 1].nextCursor !== null),
     nextPage: () => setSize(size + 1),
     refresh: () => mutate(),
   }), [data, error, isValidating, size, setSize, mutate]);
