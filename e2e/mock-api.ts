@@ -50,7 +50,7 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     backdropUrl: null,
     rating: {
       count: raters.length,
-      average: id <= 20 ? 'VERY_GOOD' : 'COOL',
+      average: (id <= 20 && 'VERY_GOOD') || (id <= 24 && 'COOL') || 'VERY_BAD',
       last: RATING_KEYS[id % RATING_KEYS.length],
     },
     genres: [id % 2 === 0 ? 'Drama' : 'Comedy', 'Sci-Fi & Fantasy'],
@@ -70,7 +70,7 @@ const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, 
 /** `GET /movies`' filters and sorts (the API's contract, on the fixtures) */
 function listMovies(params: URLSearchParams, signedIn: boolean): MovieDetail[] | 'unauthorized' {
   const q = fold(params.get('q') ?? '');
-  const minRating = params.get('minRating') as RatingKey | null;
+  const averages = (params.get('average') ?? '').split(',').filter(Boolean);
   const ratedBy = params.get('ratedBy') && Number(params.get('ratedBy'));
   if (params.get('unratedByMe') === 'true' && !signedIn) return 'unauthorized';
 
@@ -78,7 +78,7 @@ function listMovies(params: URLSearchParams, signedIn: boolean): MovieDetail[] |
     (!q || fold(`${movie.title} ${movie.originalTitle}`).includes(q))
     && (!params.get('category') || movie.category === params.get('category'))
     && (!params.get('genre') || movie.genres.includes(params.get('genre')!))
-    && (!minRating || RATING_KEYS.indexOf(movie.rating.average!) >= RATING_KEYS.indexOf(minRating))
+    && (!averages.length || averages.includes(movie.rating.average!))
     && (!ratedBy || ratersOf(movie.id).includes(ratedBy))
     && (params.get('unratedByMe') !== 'true' || !ratersOf(movie.id).includes(ME))
   ));
