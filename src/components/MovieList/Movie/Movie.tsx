@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
 import type { Category, MovieSummary } from '@/lib/types';
+import { POSTER_SIZES } from './posters';
 import classes from './style.module.scss';
 
 const CATEGORIES: Record<Category, { name: string; css: string }> = {
@@ -20,6 +21,14 @@ interface MovieProps {
 const Movie = ({ movie, onPosterSettled }: MovieProps) => {
   const category = CATEGORIES[movie.category];
   const [posterStatus, setPosterStatus] = useState<PosterStatus>(movie.posterUrl ? 'loading' : 'failed');
+  const [cached, setCached] = useState(false);
+
+  // A poster already in the browser's cache (preloaded, or seen before) shows at once, without the shimmer or the fade
+  const checkCached = useCallback((image: HTMLImageElement | null) => {
+    if (!image?.complete || !image.naturalWidth) return;
+    setCached(true);
+    setPosterStatus('loaded');
+  }, []);
 
   const settlePoster = (status: PosterStatus) => {
     setPosterStatus(status);
@@ -33,10 +42,11 @@ const Movie = ({ movie, onPosterSettled }: MovieProps) => {
           src={movie.posterUrl}
           alt=""
           fill
-          sizes="(min-width: 768px) 260px, 50vw"
+          ref={checkCached}
+          sizes={POSTER_SIZES}
           // Hidden pages of the list wait for their posters, which lazy images would never start
           loading="eager"
-          className={`${classes.poster} ${posterStatus === 'loaded' ? classes.isLoaded : ''}`}
+          className={`${classes.poster} ${posterStatus === 'loaded' ? classes.isLoaded : ''} ${cached ? classes.isCached : ''}`}
           onLoad={() => settlePoster('loaded')}
           onError={() => settlePoster('failed')}
         />
