@@ -261,3 +261,41 @@ test('a person picked in the URL shows by name, and only the default label until
   sendNames();
   await expect(select.locator('option:checked')).toHaveText('Avaliados por Bruno');
 });
+
+test('a page loaded with filters shows the bar as it starts, then as it ends, nothing in between', async ({ page, context }) => {
+  await context.addCookies([{
+    name: 'session', value: 'e2e', domain: 'localhost', path: '/',
+  }]);
+  // What the bar shows, on every frame from the start
+  await page.addInitScript(() => {
+    const w = window as unknown as { barStates: string[] };
+    w.barStates = [];
+    const record = () => {
+      const bar = document.getElementById('movie-filters');
+      if (bar) {
+        const state = [...bar.querySelectorAll('button, select')].map(el => (el instanceof HTMLSelectElement
+          ? `${el.selectedOptions[0]?.text}@${Math.round(el.getBoundingClientRect().width)}`
+          : `${el.textContent}${el.getAttribute('aria-pressed') ?? ''}${el.className.includes('isActive') ? '*' : ''}`))
+          .join(' | ');
+        if (w.barStates.at(-1) !== state) w.barStates.push(state);
+      }
+      requestAnimationFrame(record);
+    };
+    requestAnimationFrame(record);
+  });
+  // The genres, the people and the session each arrive at their own time
+  for (const [path, delay] of [['**/genres', 300], ['**/users', 600], ['**/me', 900]] as const) {
+    await page.route(path, async (route) => {
+      await new Promise((resolve) => { setTimeout(resolve, delay); });
+      await route.continue();
+    });
+  }
+
+  await page.goto('/?genre=Drama&average=UNMISSABLE&ratedBy=2');
+  await expect(page.getByLabel('Quem avaliou').locator('option:checked')).toHaveText('Avaliados por Bruno');
+  await expect(page.getByRole('button', { name: 'Só os que não avaliei' })).toBeVisible();
+  await page.waitForTimeout(300);
+
+  const states = await page.evaluate(() => (window as unknown as { barStates: string[] }).barStates);
+  expect(states, states.join('\n')).toHaveLength(2);
+});

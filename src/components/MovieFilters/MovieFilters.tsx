@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  useCallback, useEffect, useId, useRef, useState,
+  useCallback, useEffect, useId, useRef, useState, useSyncExternalStore,
 } from 'react';
 import useSWR from 'swr';
 import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
@@ -28,6 +28,8 @@ const CATEGORIES: { value: Category | null; label: string }[] = [
 // Best first
 const RATING_ORDER = Object.keys(RATING_LABELS) as RatingKey[];
 
+const noSubscription = () => () => {};
+
 const SORTS: { value: MovieSort; label: string }[] = [
   { value: 'recent', label: 'Mais recentes' },
   { value: 'rating', label: 'Melhor média' },
@@ -36,10 +38,16 @@ const SORTS: { value: MovieSort; label: string }[] = [
 
 /** Search, filters and sort for the movie list, kept in the URL (useMovieFilters). */
 const MovieFilters = () => {
-  const { filters, setFilters } = useMovieFilters();
-  const { isAuthenticated } = useAuth();
-  const { data: genres } = useSWR<{ data: GenreCount[] }>('/genres');
-  const { data: users } = useSWR<{ data: PublicUser[] }>('/users');
+  const { filters: urlFilters, setFilters } = useMovieFilters();
+  const { isAuthenticated, loading: isCheckingSession } = useAuth();
+  const { data: genres, isLoading: isLoadingGenres } = useSWR<{ data: GenreCount[] }>('/genres');
+  const { data: users, isLoading: isLoadingUsers } = useSWR<{ data: PublicUser[] }>('/users');
+  // The page is prerendered without filters; the URL's apply once hydrated
+  const isHydrated = useSyncExternalStore(noSubscription, () => true, () => false);
+  // Shown as they are once everything they need has arrived (the URL's filters, the genres' and people's names, the
+  // session for "Só os que não avaliei"); the defaults until then, so the bar changes once rather than piece by piece
+  const isReady = isHydrated && !isLoadingGenres && !isLoadingUsers && !isCheckingSession;
+  const filters = isReady ? urlFilters : DEFAULT_FILTERS;
   // On phones the filters fold behind a button
   const [isOpen, setIsOpen] = useState(false);
   const activeCount = countActiveFilters(filters);
@@ -105,7 +113,7 @@ const MovieFilters = () => {
           options={users?.data.map(({ id, name }) => ({ value: String(id), label: `Avaliados por ${name}` }))}
           onChange={ratedBy => set({ ratedBy })}
         />
-        {isAuthenticated ? (
+        {isReady && isAuthenticated ? (
           <button
             type="button"
             className={classes.chip}
