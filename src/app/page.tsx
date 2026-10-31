@@ -1,15 +1,16 @@
 import { Suspense } from 'react';
-import Backdrop, { BackdropPlaceholder } from '@/components/Backdrop/Backdrop';
+import { BackdropPlaceholder } from '@/components/Backdrop/Backdrop';
+import SessionBackdrop from '@/components/Backdrop/SessionBackdrop';
 import MovieFilters from '@/components/MovieFilters/MovieFilters';
 import MovieList from '@/components/MovieList/MovieList';
 import MovieListProvider from '@/components/MovieList/MovieListProvider';
 import { getLatestMovies, getRandomMovie } from '@/lib/movies';
 
-// A different backdrop on every visit, streamed into the static shell
+// A different backdrop on every visit (SessionBackdrop keeps it while navigating), streamed into the static shell
 async function RandomBackdrop() {
   const movie = await getRandomMovie();
 
-  return <Backdrop backdrop={movie?.backdropUrl ?? null} colorless />;
+  return <SessionBackdrop backdrop={movie?.backdropUrl ?? null} />;
 }
 
 export default async function HomePage() {

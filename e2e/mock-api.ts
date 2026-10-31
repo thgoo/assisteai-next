@@ -5,6 +5,7 @@ import type {
 } from '../src/lib/types';
 
 const PORT = Number(process.env.MOCK_API_PORT || 3999);
+let randomDraws = 0;
 export const SESSION_COOKIE = 'session=e2e';
 
 const PAGE_SIZE = 24;
@@ -192,7 +193,11 @@ Bun.serve({
     if (route === 'GET /users') return json(req, { data: people });
 
     // With a backdrop, like production (it takes space above the list, which scroll restoration depends on)
-    if (route === 'GET /movies/random') return json(req, { ...movies[0], backdropUrl: `http://localhost:${PORT}/backdrop.png` });
+    // A new draw every time, like production
+    if (route === 'GET /movies/random') {
+      randomDraws += 1;
+      return json(req, { ...movies[0], backdropUrl: `http://localhost:${PORT}/backdrop.png?draw=${randomDraws}` });
+    }
 
     if (route === 'GET /backdrop.png' || /^GET \/t\/p\/w\d+\/e2e-backdrop-\d+\.png$/.test(route)) {
       return new Response(Bun.file(new URL('../public/img/logo-square.png', import.meta.url)));
