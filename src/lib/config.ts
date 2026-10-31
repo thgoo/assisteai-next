@@ -1,6 +1,9 @@
 /** Public URL of the API, used by the browser (baked in at build time). */
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.assisteai.com.br';
 
+/** The site's own address, for absolute links in link previews (Open Graph). */
+export const SITE_URL = process.env.SITE_URL || 'https://assisteai.com.br';
+
 /** URL the Next.js server uses to reach the API, e.g. a local address on the same host. */
 export const API_INTERNAL_URL = process.env.API_INTERNAL_URL || API_URL;
 

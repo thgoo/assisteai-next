@@ -235,3 +235,21 @@ test('docking fades the label out and the shadow in gradually, and back', async 
   expect(up.some(opacity => opacity > 0.1 && opacity < 0.9)).toBe(true);
   expect(up.at(-1)).toBeGreaterThan(0.95);
 });
+
+test('ratings show their comments', async ({ page }) => {
+  // Bruno rated every movie, with a comment
+  await page.goto('/movies/9-movie-9');
+  await expect(page.getByText('Bom demais')).toBeVisible();
+});
+
+test('a shared movie link previews its rating and backdrop', async ({ request }) => {
+  const html = await (await request.get('/movies/9-movie-9')).text();
+  expect(html).toContain('<meta property="og:title" content="Filme 9 (2009)"/>');
+  expect(html).toMatch(/<meta property="og:description" content="Média Muito Bom · \d avaliações — Description of movie 9."\/>/);
+  expect(html).toMatch(/<meta property="og:image" content="[^"]*logo-square.png"\/>/);
+});
+
+test('people without a picture show their initials', async ({ page }) => {
+  await page.goto('/movies/9-movie-9');
+  await expect(page.getByText('BR', { exact: true }).first()).toBeVisible();
+});
