@@ -201,3 +201,37 @@ test('on wide screens "Nova indicação" docks at the bottom right once the head
   await button.click();
   await expect(page.getByLabel('Filme/Série *')).toBeVisible();
 });
+
+test('docking fades the label out and the shadow in gradually, and back', async ({ page, context }) => {
+  await signIn(context);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Nova indicação' })).toBeInViewport();
+
+  // The label's opacity on each frame the ghost shows, while scrolling to `top`
+  const opacities = (top: number) => page.evaluate(async (scrollTop) => {
+    const ghost = document.querySelector<HTMLElement>('[class*="_ghost"]')!;
+    const label = ghost.querySelector<HTMLElement>('[class*="_label"]')!;
+    const seen: number[] = [];
+    let run = true;
+    const tick = () => {
+      if (getComputedStyle(ghost).display !== 'none') seen.push(Number(label.style.opacity));
+      if (run) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+    await new Promise((resolve) => { setTimeout(resolve, 1_000); });
+    run = false;
+    return seen;
+  }, top);
+
+  const down = await opacities(1_500);
+  expect(down[0]).toBeGreaterThan(0.8);
+  expect(down.some(opacity => opacity > 0.1 && opacity < 0.9)).toBe(true);
+  expect(down.at(-1)).toBeLessThan(0.05);
+
+  const up = await opacities(0);
+  expect(up[0]).toBeLessThan(0.2);
+  expect(up.some(opacity => opacity > 0.1 && opacity < 0.9)).toBe(true);
+  expect(up.at(-1)).toBeGreaterThan(0.95);
+});

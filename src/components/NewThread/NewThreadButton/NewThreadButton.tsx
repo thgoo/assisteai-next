@@ -42,7 +42,8 @@ const NewThreadButton = ({ onClick }: { onClick: () => void }) => {
       // From where the ghost is, when the scroll turns back mid-way
       const from = (moving ? ghost : (toDock ? headerRef : dockRef).current!).getBoundingClientRect();
       const fromRadius = moving ? parseFloat(ghost.style.borderRadius) : (toDock ? HEADER_RADIUS : from.height / 2);
-      const fromLabel = moving ? parseFloat(label.style.opacity) : Number(!toDock);
+      // The label's share: whole in the header, none in the dock
+      const fromLabel = moving ? parseFloat(label.style.opacity) : Number(toDock);
       const labelWidth = headerRef.current!.querySelector(`.${classes.label}`)!.getBoundingClientRect().width;
       const finalPlace = toDock ? 'docked' : 'header';
       cancelAnimationFrame(frame);
@@ -67,13 +68,16 @@ const NewThreadButton = ({ onClick }: { onClick: () => void }) => {
           height: `${mix(from.height, to.height)}px`,
           borderRadius: `${mix(fromRadius, toDock ? to.height / 2 : HEADER_RADIUS)}px`,
         });
-        // The label shrinks away into the dock's circle, and grows back on the way to the header
+        // The label shrinks away into the dock's circle, and grows back on the way to the header; the dock's shadow
+        // grows and fades the other way, as the header's button has none
         const shown = mix(fromLabel, Number(!toDock));
         Object.assign(label.style, {
           opacity: String(shown),
           maxWidth: `${labelWidth * shown}px`,
           marginLeft: `${0.8 * shown}rem`,
         });
+        const lift = 1 - shown;
+        ghost.style.boxShadow = `0 ${4 * lift}px ${12 * lift}px rgba(0, 0, 0, ${0.45 * lift})`;
 
         if (t < 1) {
           frame = requestAnimationFrame(step);
