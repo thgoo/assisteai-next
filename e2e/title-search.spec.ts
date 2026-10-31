@@ -135,3 +135,32 @@ test('the suggestions float over the modal instead of making it scroll', async (
   });
   expect(modalScrolls).toBe(false);
 });
+
+test('on a movie\'s page the form starts from that movie', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/movies/10-movie-10');
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+
+  await expect(page.getByText('Filme 10', { exact: true }).last()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Trocar título' })).toBeVisible();
+  await expect(page.locator('input[name="url"]')).toHaveValue('https://www.themoviedb.org/movie/10010');
+});
+
+test('on the page of a movie already rated, the form says so', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/movies/8-movie-8');
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+
+  await expect(page.getByRole('option', { name: /Filme 8.*Você já avaliou/ })).toBeVisible();
+  await expect(page.locator('input[name="url"]')).toHaveValue('');
+});
+
+test('elsewhere the form starts empty', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/movies/10-movie-10');
+  await page.getByRole('link', { name: 'Logo' }).click();
+  await expect(page).toHaveURL('/');
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+
+  await expect(page.getByLabel('Filme/Série *')).toHaveValue('');
+});

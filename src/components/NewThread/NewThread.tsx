@@ -6,6 +6,7 @@ import { refreshMovieCaches } from '@/app/actions';
 import { ApiError, apiFetch } from '@/lib/api';
 import { RATING_LABELS } from '@/lib/ratings';
 import useAuth from '../Auth/AuthProvider';
+import { useCurrentMovie } from '../CurrentMovie/CurrentMovie';
 import Modal from '../Modal/Modal';
 import { MOVIES_CHANGED_EVENT } from '../MovieList/MovieListProvider';
 import { useToast } from '../Toast/ToastProvider';
@@ -19,6 +20,8 @@ const NewThread = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isAuthenticated, loading, openLogin } = useAuth();
   const { showToast } = useToast();
+  // On a movie's page, the form starts from that movie
+  const currentMovie = useCurrentMovie();
 
   const showModal = () => {
     setRating('');
@@ -87,7 +90,7 @@ const NewThread = () => {
           <form onSubmit={handleSubmit}>
             <div className={classes.field}>
               <label htmlFor="url">Filme/Série *</label>
-              <TitleField id="url" name="url" />
+              <TitleField id="url" name="url" suggestion={currentMovie} />
             </div>
             <div className={classes.field}>
               <label htmlFor="rating">Avaliação *</label>

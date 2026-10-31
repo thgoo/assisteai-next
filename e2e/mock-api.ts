@@ -122,6 +122,25 @@ const titles: TitleResult[] = [
     posterUrl: null,
     ratedByMe: false,
   },
+  // Two of the movies above, for "Nova indicação" on their pages: the signed-in user rated every 4th id
+  {
+    url: 'https://www.themoviedb.org/movie/10010',
+    category: 'movie',
+    title: 'Filme 10',
+    originalTitle: 'Movie 10',
+    year: 2010,
+    posterUrl: null,
+    ratedByMe: false,
+  },
+  {
+    url: 'https://www.themoviedb.org/movie/10008',
+    category: 'movie',
+    title: 'Filme 8',
+    originalTitle: 'Movie 8',
+    year: 2008,
+    posterUrl: null,
+    ratedByMe: true,
+  },
 ];
 
 const user: User = { name: 'Usuário E2E', email: 'e2e@example.com', avatarUrl: null };

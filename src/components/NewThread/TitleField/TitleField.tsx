@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import type { Category, TitleResult } from '@/lib/types';
+import type { TitleSuggestion } from '../../CurrentMovie/CurrentMovie';
 import classes from './style.module.scss';
 
 const MIN_QUERY_LENGTH = 2;
@@ -38,13 +39,17 @@ interface TitleFieldProps {
   id: string;
   /** The form field holding the title's link, for `POST /ratings` */
   name: string;
+  /** A title to start from (the movie on screen): searched by name, and picked if found and not rated yet */
+  suggestion?: TitleSuggestion | null;
 }
 
 /** Search a title by name (TMDb, through the API) or paste its IMDb/TMDb link. */
-const TitleField = ({ id, name }: TitleFieldProps) => {
+const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(suggestion?.title ?? '');
+  // Until its search answers, or the visitor types something else
+  const pendingSuggestion = useRef(suggestion);
   const [selected, setSelected] = useState<TitleResult | null>(null);
   const [search, setSearch] = useState<Search | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -73,6 +78,20 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
         );
         setSearch({ term, status: 'done', results: data });
         setActiveIndex(-1);
+
+        const pending = pendingSuggestion.current;
+        if (pending && term === pending.title.trim()) {
+          pendingSuggestion.current = null;
+          const match = data.find(title => title.originalTitle === pending.originalTitle
+            && title.year === pending.year && title.category === pending.category);
+          // Already rated, or not found for sure: the list shows why, and the other titles
+          if (match && !match.ratedByMe) {
+            setSelected(match);
+            setIsOpen(false);
+          } else {
+            setIsOpen(true);
+          }
+        }
       } catch {
         if (!controller.signal.aborted) setSearch({ term, status: 'error', results: [] });
       }
@@ -204,6 +223,7 @@ const TitleField = ({ id, name }: TitleFieldProps) => {
           placeholder="Digite o nome ou cole o link do IMDb/TMDb..."
           value={query}
           onChange={(evt) => {
+            pendingSuggestion.current = null;
             setQuery(evt.target.value);
             setIsOpen(true);
           }}
