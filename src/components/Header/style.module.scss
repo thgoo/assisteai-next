@@ -4,6 +4,12 @@
   height: 96px;
   z-index: 2;
 
+  // Phones: a solid bar, with the backdrop below it rather than behind
+  @media screen and (max-width: 767px) {
+    height: 64px;
+    background-color: #202225;
+  }
+
   > div {
     display: flex;
     justify-content: space-between;

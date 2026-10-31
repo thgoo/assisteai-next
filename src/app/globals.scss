@@ -19,8 +19,8 @@ body {
 
 // index.js
 .backdrop-wrapper {
-  // Phones: from edge to edge, past the container's padding
-  margin: -11.9rem -1.5rem 0;
+  // Phones: from edge to edge, past the container's padding, below the header
+  margin: 0 -1.5rem;
 
   @media screen and (min-width: 768px) {
     margin: -9.6rem 0 0;

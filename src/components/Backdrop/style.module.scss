@@ -8,11 +8,11 @@
   opacity: .5;
   z-index: 0;
 
-  // Phones: taller, so more of the image shows below the header
+  // Phones: below the header, the whole image (TMDb's backdrops are 16:9)
   @media screen and (max-width: 767px) {
-    padding-bottom: 75%;
+    padding-bottom: 56.25%;
     // The content starts where the bottom fade is solid
-    margin-bottom: -16%;
+    margin-bottom: -12%;
   }
 
   @media screen and (min-width: 768px) {

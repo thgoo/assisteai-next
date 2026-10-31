@@ -2,6 +2,11 @@
   position: relative;
   margin-top: -96px;
 
+  // Phones: the backdrop starts below the header
+  @media screen and (max-width: 767px) {
+    margin-top: 0;
+  }
+
   // The backdrop is what pushes the content below the header
   &.hasNoBackdrop {
     margin-top: 0;
