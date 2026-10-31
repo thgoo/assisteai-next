@@ -76,11 +76,13 @@ test('unknown movies answer 404', async ({ request }) => {
   expect((await request.get('/movies/not-a-movie')).status()).toBe(404);
 });
 
-test('anonymous visitors see the login button and cannot rate', async ({ page }) => {
+test('anonymous visitors are asked to log in before rating', async ({ page }) => {
   await page.goto('/');
-
   await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Nova indicação' })).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+  await expect(page.getByText('faça login')).toBeVisible();
+  await expect(page.getByLabel('Filme/Série *')).toHaveCount(0);
 });
 
 test('signed-in users never see the login button while the session is checked', async ({ page, context }) => {
@@ -96,7 +98,7 @@ test('signed-in users never see the login button while the session is checked', 
   await page.goto('/');
 
   // `isVisible` checks right now; `toBeHidden` would wait for the button to go
-  await expect(page.getByRole('button', { name: 'Nova indicação' })).toBeVisible();
+  await expect(page.getByRole('searchbox')).toBeVisible();
   expect(await page.getByRole('button', { name: 'Entrar' }).isVisible()).toBe(false);
 
   answerSession();
@@ -153,4 +155,22 @@ test('on phones nothing spills past the screen\'s width', async ({ page }) => {
   await page.goto('/movies/9-movie-9');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 9');
   expect(await overflow()).toBe(0);
+});
+
+test('on phones "Nova indicação" floats at the bottom right, on every page', async ({ page, context }) => {
+  await signIn(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const button = page.getByRole('button', { name: 'Nova indicação' });
+
+  for (const path of ['/', '/movies/9-movie-9']) {
+    await page.goto(path);
+    await page.mouse.wheel(0, 2_000);
+    await expect(button).toBeInViewport();
+    const box = (await button.boundingBox())!;
+    expect(box.x + box.width).toBeGreaterThan(390 - 32);
+    expect(box.y + box.height).toBeGreaterThan(844 - 32);
+  }
+
+  await button.click();
+  await expect(page.getByLabel('Filme/Série *')).toBeVisible();
 });

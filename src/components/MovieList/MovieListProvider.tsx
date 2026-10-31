@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  createContext, useCallback, useContext, useMemo,
+  createContext, useCallback, useContext, useEffect, useMemo,
 } from 'react';
 import useSWRInfinite from 'swr/infinite';
 import { ApiError } from '@/lib/api';
@@ -17,8 +17,10 @@ interface MovieListContextValue {
   failed: boolean;
   hasMore: boolean;
   nextPage: () => void;
-  refresh: () => void;
 }
+
+/** Dispatched on `window` when a rating changes the list (the "Nova indicação" form lives in the header) */
+export const MOVIES_CHANGED_EVENT = 'movieschange';
 
 const MovieListContext = createContext<MovieListContextValue | null>(null);
 
@@ -50,8 +52,8 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     fallbackData: firstPage && !query ? [firstPage] : undefined,
     // No automatic refetch of a list already in the cache. SWR defers that refetch to the next frame and runs it with
     // the latest `getKey`: when the filters change in between (at hydration, or on a quick change), the old filters'
-    // cache got the new filters' pages. A list without cache is fetched at once, consistently; focus and `refresh()`
-    // still refetch.
+    // cache got the new filters' pages. A list without cache is fetched at once, consistently; focus and
+    // MOVIES_CHANGED_EVENT still refetch.
     revalidateIfStale: false,
     // No `keepPreviousData`: it keeps the last list SWR cached, not the one on screen (the server's unfiltered first
     // page never enters the cache), so <MovieList> holds the previous results itself
@@ -63,6 +65,12 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     },
   });
 
+  useEffect(() => {
+    const refresh = () => mutate();
+    window.addEventListener(MOVIES_CHANGED_EVENT, refresh);
+    return () => window.removeEventListener(MOVIES_CHANGED_EVENT, refresh);
+  }, [mutate]);
+
   const value = useMemo(() => ({
     pages: data,
     isValidating,
@@ -70,8 +78,7 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     // After a failed page, no more automatic loading: the bottom check would retry it in a loop
     hasMore: !error && (!data || data[data.length - 1].nextCursor !== null),
     nextPage: () => setSize(size + 1),
-    refresh: () => mutate(),
-  }), [data, error, isValidating, size, setSize, mutate]);
+  }), [data, error, isValidating, size, setSize]);
 
   return <MovieListContext.Provider value={value}>{children}</MovieListContext.Provider>;
 }

@@ -3,7 +3,6 @@ import Backdrop, { BackdropPlaceholder } from '@/components/Backdrop/Backdrop';
 import MovieFilters from '@/components/MovieFilters/MovieFilters';
 import MovieList from '@/components/MovieList/MovieList';
 import MovieListProvider from '@/components/MovieList/MovieListProvider';
-import NewThread from '@/components/NewThread/NewThread';
 import { getLatestMovies, getRandomMovie } from '@/lib/movies';
 
 // A different backdrop on every visit, streamed into the static shell
@@ -25,7 +24,7 @@ export default async function HomePage() {
           </Suspense>
         </div>
         <div className="actions-wrapper">
-          <MovieFilters action={<NewThread />} />
+          <MovieFilters />
         </div>
         <div className="movie-list-wrapper">
           <MovieList />

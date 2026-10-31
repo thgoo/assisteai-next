@@ -34,13 +34,8 @@ const SORTS: { value: MovieSort; label: string }[] = [
   { value: 'popular', label: 'Mais avaliados' },
 ];
 
-interface MovieFiltersProps {
-  /** Shown at the end of the search row (the "Nova indicação" button) */
-  action?: React.ReactNode;
-}
-
 /** Search, filters and sort for the movie list, kept in the URL (useMovieFilters). */
-const MovieFilters = ({ action = null }: MovieFiltersProps) => {
+const MovieFilters = () => {
   const { filters, setFilters } = useMovieFilters();
   const { isAuthenticated } = useAuth();
   const { data: genres } = useSWR<{ data: GenreCount[] }>('/genres');
@@ -80,7 +75,6 @@ const MovieFilters = ({ action = null }: MovieFiltersProps) => {
           Filtros
           {activeCount ? <span className={classes.count}>{activeCount}</span> : null}
         </button>
-        {action}
       </div>
       <div id={`${FILTERS_ELEMENT_ID}-options`} className={`${classes.options} ${isOpen ? classes.isOpen : ''}`}>
         <div className={classes.segmented} role="group" aria-label="Tipo">

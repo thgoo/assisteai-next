@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import Auth from '../Auth/Auth';
+import NewThread from '../NewThread/NewThread';
 import classes from './style.module.scss';
 
 const Header = () => (
@@ -11,7 +12,8 @@ const Header = () => (
           <Image src="/img/logo.svg" alt="Logo" width={791} height={172} style={{ width: 'auto' }} priority />
         </Link>
       </div>
-      <div className={classes.authWrapper}>
+      <div className={classes.actions}>
+        <NewThread />
         <Auth />
       </div>
     </div>

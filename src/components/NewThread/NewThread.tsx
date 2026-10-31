@@ -7,8 +7,7 @@ import { ApiError, apiFetch } from '@/lib/api';
 import { RATING_LABELS } from '@/lib/ratings';
 import useAuth from '../Auth/AuthProvider';
 import Modal from '../Modal/Modal';
-import { useMovieList } from '../MovieList/MovieListProvider';
-import { TOOLTIP_ID } from '../Providers/Providers';
+import { MOVIES_CHANGED_EVENT } from '../MovieList/MovieListProvider';
 import { useToast } from '../Toast/ToastProvider';
 import NewThreadButton from './NewThreadButton/NewThreadButton';
 import TitleField from './TitleField/TitleField';
@@ -18,9 +17,8 @@ const NewThread = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [rating, setRating] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, openLogin } = useAuth();
   const { showToast } = useToast();
-  const { refresh: refreshMovies } = useMovieList();
 
   const showModal = () => {
     setRating('');
@@ -61,7 +59,7 @@ const NewThread = () => {
       hideModal();
       // The rating is saved either way; at worst the cached pages catch up a few minutes later
       await refreshMovieCaches(movie.id).catch(() => undefined);
-      refreshMovies();
+      window.dispatchEvent(new Event(MOVIES_CHANGED_EVENT));
     } catch (err) {
       const unauthorized = err instanceof ApiError && err.status === 401;
       showToast({
@@ -79,15 +77,11 @@ const NewThread = () => {
 
   return (
     <div>
-      <div className={classes.buttonWrapper}>
-        {/* The tooltip anchors here, the button's size: a disabled button gets no mouse events */}
-        <div
-          data-tooltip-id={!isAuthenticated && !loading ? TOOLTIP_ID : undefined}
-          data-tooltip-content="Você deve estar logado para enviar uma avaliação."
-        >
-          <NewThreadButton onClick={showModal} disabled={!isAuthenticated} />
-        </div>
-      </div>
+      {/* Shows with the header's "Entrar" or avatar, once the session check answers, so neither pushes the other */}
+      {loading ? null : (
+        // Visitors without a session sign in first, then get the form
+        <NewThreadButton onClick={() => (isAuthenticated ? showModal() : openLogin(showModal))} />
+      )}
       <Modal isOpen={modalVisible} onRequestClose={hideModal}>
         <div className={classes.newThreadForm}>
           <form onSubmit={handleSubmit}>

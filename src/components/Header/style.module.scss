@@ -12,6 +12,12 @@
   }
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2.4rem;
+}
+
 .logo {
   line-height: 0;
 

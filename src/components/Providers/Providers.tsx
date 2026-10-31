@@ -1,13 +1,10 @@
 'use client';
 
 import { SWRConfig } from 'swr';
-import { Tooltip } from 'react-tooltip';
 import { apiFetch } from '@/lib/api';
 import { AuthProvider } from '../Auth/AuthProvider';
 import Toast from '../Toast/Toast';
 import { ToastProvider } from '../Toast/ToastProvider';
-
-export const TOOLTIP_ID = 'tooltip';
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
   <ToastProvider>
@@ -16,7 +13,6 @@ const Providers = ({ children }: { children: React.ReactNode }) => (
         {children}
       </SWRConfig>
     </AuthProvider>
-    <Tooltip id={TOOLTIP_ID} />
     <Toast />
   </ToastProvider>
 );

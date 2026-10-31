@@ -1,5 +1,57 @@
+@use 'sass:color';
+
+// The site's accent (MovieFilters' active options)
+$blue: #4d69b4;
+
 .newThreadButton {
-  button {
-    width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  border: 0;
+  background-color: $blue;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: color.adjust($blue, $lightness: 6%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
+
+  svg {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  // Phones: always at hand while scrolling the list
+  @media screen and (max-width: 767px) {
+    position: fixed;
+    right: 1.6rem;
+    bottom: calc(1.6rem + env(safe-area-inset-bottom));
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+
+    svg {
+      width: 2.6rem;
+      height: 2.6rem;
+    }
+
+    .label {
+      display: none;
+    }
+  }
+
+  @media screen and (min-width: 768px) {
+    height: 38px;
+    padding: 0 1.6rem;
+    border-radius: 5px;
+    font-size: 1.4rem;
   }
 }
