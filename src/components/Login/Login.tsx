@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import { LogIn } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
@@ -11,11 +10,11 @@ import { useToast } from '../Toast/ToastProvider';
 import classes from './style.module.scss';
 
 const Login = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const { loginWithGoogle } = useAuth();
+  // Also opened by actions that need a session (useAuth's `openLogin`)
+  const {
+    loginWithGoogle, isLoginOpen, openLogin, closeLogin,
+  } = useAuth();
   const { showToast } = useToast();
-
-  const hideLoginModal = () => setModalVisible(false);
 
   const showLoginError = (text = 'Não foi possível entrar com o Google. Tente de novo.') => {
     showToast({
@@ -34,7 +33,6 @@ const Login = () => {
 
     try {
       await loginWithGoogle(credential);
-      hideLoginModal();
     } catch (err) {
       showLoginError(err instanceof ApiError ? err.detail : undefined);
     }
@@ -42,11 +40,11 @@ const Login = () => {
 
   return (
     <div className={classes.login}>
-      <button type="button" className={classes.signinButton} onClick={() => setModalVisible(true)}>
+      <button type="button" className={classes.signinButton} onClick={() => openLogin()}>
         <LogIn />
         Entrar
       </button>
-      <Modal isOpen={modalVisible} onRequestClose={hideLoginModal}>
+      <Modal isOpen={isLoginOpen} onRequestClose={closeLogin}>
         <div className={classes.loginForm}>
           <div className={classes.logo}>
             <Image src="/img/logo-text.png" alt="Logo" width={792} height={173} style={{ width: 'auto' }} />
