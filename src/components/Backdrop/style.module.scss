@@ -8,6 +8,13 @@
   opacity: .5;
   z-index: 0;
 
+  // Phones: taller, so more of the image shows below the header
+  @media screen and (max-width: 767px) {
+    padding-bottom: 75%;
+    // The content starts where the bottom fade is solid
+    margin-bottom: -16%;
+  }
+
   @media screen and (min-width: 768px) {
     max-width: 95%;
   }
@@ -92,6 +99,20 @@
       );
     pointer-events: none;
     z-index: 2;
+
+    // Phones: the image takes the whole width, so only the bottom fades
+    @media screen and (max-width: 767px) {
+      width: 100%;
+      background-image: linear-gradient(
+        0deg,
+        #202225 0,
+        #202225 21.48148148%,
+        rgba(32, 34, 37, 0.80349854) 31.70740741%,
+        rgba(32, 34, 37, 0.50375) 40.97407407%,
+        rgba(32, 34, 37, 0.20262391) 49.88148148%,
+        rgba(32, 34, 37, 0) 58.51851852%
+      );
+    }
   }
 
   .background {
