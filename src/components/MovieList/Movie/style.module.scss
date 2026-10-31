@@ -9,9 +9,9 @@
   will-change: filter;
   overflow: hidden;
 
-  // Until the poster arrives: a soft shimmer in the site's own tones, without the poster's frame
+  // Until the poster arrives: a block a shade above the page, with a soft shimmer, without the poster's frame
   &.isLoading {
-    background: linear-gradient(100deg, #202225 40%, #2f3136 50%, #202225 60%);
+    background: linear-gradient(100deg, #292b2f 40%, #34373c 50%, #292b2f 60%);
     background-size: 200% 100%;
     box-shadow: none;
     animation: shimmer 1.2s linear infinite;
