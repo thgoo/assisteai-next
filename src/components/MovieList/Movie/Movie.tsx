@@ -44,7 +44,7 @@ const Movie = ({ movie, isOpening = false, onPosterSettled }: MovieProps) => {
     <PosterTransition id={movie.id}>
       <div
         className={`${classes.movie} ${posterStatus === 'loading' ? classes.isLoading : ''} ${
-          isOpening ? classes.isOpening : ''}`}
+          cached ? classes.isCached : ''} ${isOpening ? classes.isOpening : ''}`}
       >
         {movie.posterUrl && posterStatus !== 'failed' ? (
           <Image

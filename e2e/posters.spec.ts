@@ -313,3 +313,22 @@ for (const screen of [{ name: 'phones', width: 390, size: 'w780', held: true }, 
     await expect(backdrop).toHaveCSS('opacity', '1');
   });
 }
+
+test('a slow poster shows the shimmer without its frame, which arrives with the poster', async ({ page }) => {
+  const release = servePosters(page, 'hold');
+  await loadSecondPage(page);
+  const movie = card(page, 25).locator(':scope > div');
+  const frame = () => movie.evaluate(el => ({
+    shadow: getComputedStyle(el).boxShadow,
+    border: getComputedStyle(el, '::before').opacity,
+  }));
+
+  // Shown after 1 s with placeholders
+  await expect(movie).toHaveClass(/_isLoading/, { timeout: 3_000 });
+  await expect(card(page, 25)).toBeVisible({ timeout: 3_000 });
+  expect(await frame()).toEqual({ shadow: 'none', border: '0' });
+
+  release();
+  await expect(movie).not.toHaveClass(/_isLoading/);
+  await expect.poll(frame).toEqual({ shadow: 'rgba(0, 0, 0, 0.35) 0px 1px 3px 0px', border: '1' });
+});

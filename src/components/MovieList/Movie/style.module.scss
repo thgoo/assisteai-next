@@ -4,15 +4,27 @@
   height: 100%;
   text-align: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  transition: filter 0.3s;
+  // The frame (shadow and :before) fades in with the poster it belongs to
+  transition: filter 0.3s, box-shadow 0.3s;
   will-change: filter;
   overflow: hidden;
 
-  // Until the poster arrives: a soft shimmer in the site's own tones
+  // Until the poster arrives: a soft shimmer in the site's own tones, without the poster's frame
   &.isLoading {
     background: linear-gradient(100deg, #202225 40%, #2f3136 50%, #202225 60%);
     background-size: 200% 100%;
+    box-shadow: none;
     animation: shimmer 1.2s linear infinite;
+
+    &:before {
+      opacity: 0;
+    }
+  }
+
+  // A poster from the browser's cache shows at once (.poster.isCached), and so does its frame
+  &.isCached,
+  &.isCached:before {
+    transition: none;
   }
 
   &:before {
@@ -31,6 +43,7 @@
     );
     background-repeat: no-repeat;
     background-size: 100% 1px;
+    transition: opacity 0.3s;
   }
 
   &:hover {
