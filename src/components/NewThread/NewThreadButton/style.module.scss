@@ -90,7 +90,7 @@ $blue: #4d69b4;
   }
 }
 
-// The button on its way between the header and the dock; the animation sets its place, size and roundness
+// The button on its way between the header and the dock; NewThreadButton sets its place, size and roundness each frame
 .ghost {
   @include button;
   @include wide;

@@ -5,18 +5,12 @@ import { Plus } from 'lucide-react';
 import classes from './style.module.scss';
 
 const MOVE_MS = 220;
-const EASING = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+/** Roughly the cubic-bezier(0.2, 0.8, 0.2, 1) of the site's other transitions: quick start, soft landing */
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+const HEADER_RADIUS = 5;
 
 /** Where the button is: in the header, on its way between the two places, or docked at the bottom right */
 type Place = 'header' | 'moving' | 'docked';
-
-const shape = (rect: DOMRect) => ({
-  transform: `translate(${rect.left}px, ${rect.top}px)`,
-  width: `${rect.width}px`,
-  height: `${rect.height}px`,
-  // The header's rounded rectangle or the dock's circle
-  borderRadius: rect.width === rect.height ? `${rect.height / 2}px` : '5px',
-});
 
 const Content = () => (
   <>
@@ -38,35 +32,62 @@ const NewThreadButton = ({ onClick }: { onClick: () => void }) => {
 
   useEffect(() => {
     let docked = false;
-    let animations: Animation[] = [];
+    let moving = false;
+    let frame = 0;
 
     const move = (toDock: boolean) => {
       const ghost = ghostRef.current!;
+      const label = ghost.querySelector<HTMLElement>(`.${classes.label}`)!;
+      const target = (toDock ? dockRef : headerRef).current!;
       // From where the ghost is, when the scroll turns back mid-way
-      const moving = animations.some(animation => animation.playState === 'running');
       const from = (moving ? ghost : (toDock ? headerRef : dockRef).current!).getBoundingClientRect();
-      const to = (toDock ? dockRef : headerRef).current!.getBoundingClientRect();
-      animations.forEach(animation => animation.cancel());
+      const fromRadius = moving ? parseFloat(ghost.style.borderRadius) : (toDock ? HEADER_RADIUS : from.height / 2);
+      const fromLabel = moving ? parseFloat(label.style.opacity) : Number(!toDock);
+      const labelWidth = headerRef.current!.querySelector(`.${classes.label}`)!.getBoundingClientRect().width;
       const finalPlace = toDock ? 'docked' : 'header';
+      cancelAnimationFrame(frame);
 
       // Phones (the dock isn't shown) and reduced motion: just switch
-      if (!to.width || !from.width || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        animations = [];
+      if (!target.getBoundingClientRect().width || !from.width
+        || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        moving = false;
         setPlace(finalPlace);
         return;
       }
 
-      const options = { duration: MOVE_MS, easing: EASING, fill: 'both' } as const;
-      const label = ghost.querySelector(`.${classes.label}`)!;
-      const wide = { opacity: 1, maxWidth: '200px', marginLeft: '0.8rem' };
-      const round = { opacity: 0, maxWidth: '0px', marginLeft: '0px' };
-      animations = [
-        ghost.animate([shape(from), shape(to)], options),
-        label.animate(toDock ? [wide, round] : [round, wide], options),
-      ];
+      const start = performance.now();
+      const step = (now: number) => {
+        const t = Math.min((now - start) / MOVE_MS, 1);
+        const mix = (a: number, b: number) => a + (b - a) * easeOut(t);
+        // Toward where the target is now, not where it was: the header's button keeps moving while the page scrolls
+        const to = target.getBoundingClientRect();
+        Object.assign(ghost.style, {
+          transform: `translate(${mix(from.left, to.left)}px, ${mix(from.top, to.top)}px)`,
+          width: `${mix(from.width, to.width)}px`,
+          height: `${mix(from.height, to.height)}px`,
+          borderRadius: `${mix(fromRadius, toDock ? to.height / 2 : HEADER_RADIUS)}px`,
+        });
+        // The label shrinks away into the dock's circle, and grows back on the way to the header
+        const shown = mix(fromLabel, Number(!toDock));
+        Object.assign(label.style, {
+          opacity: String(shown),
+          maxWidth: `${labelWidth * shown}px`,
+          marginLeft: `${0.8 * shown}rem`,
+        });
+
+        if (t < 1) {
+          frame = requestAnimationFrame(step);
+        } else {
+          moving = false;
+          setPlace(finalPlace);
+        }
+      };
+
+      // The first frame right away: the ghost shows with the next render, already in place
+      step(start);
+      moving = true;
       setPlace('moving');
-      // The ghost hides with the new place; canceling here would flash it at its unanimated spot first
-      animations[0].onfinish = () => setPlace(finalPlace);
+      frame = requestAnimationFrame(step);
     };
 
     // Docks as soon as the header's button starts to leave the screen, so the morph starts where it can be seen
@@ -80,7 +101,7 @@ const NewThreadButton = ({ onClick }: { onClick: () => void }) => {
 
     return () => {
       observer.disconnect();
-      animations.forEach(animation => animation.cancel());
+      cancelAnimationFrame(frame);
     };
   }, []);
 
