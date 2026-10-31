@@ -170,3 +170,48 @@
   }
 }
 
+
+// Phones: a smaller poster beside the title and the rating summary, the rest below it at full width
+@media screen and (max-width: 767px) {
+  .content {
+    grid-template:
+      'poster title' 1fr
+      'poster rating-summary' auto
+      'description description' auto
+      'rating-section rating-section' auto / 110px minmax(0, 1fr);
+    column-gap: 1.6rem;
+  }
+
+  .title {
+    align-self: end;
+
+    h1 {
+      margin: 0 0 1.2rem;
+      font-size: 2.6rem;
+      line-height: 1.2;
+      letter-spacing: normal;
+
+      small {
+        display: block;
+        margin: .4rem 0 0;
+        font-size: 1.6rem;
+      }
+    }
+  }
+
+  .ratingSummaryWrapper {
+    justify-content: flex-start;
+  }
+
+  .description {
+    margin-top: 2rem;
+  }
+
+  .ratingSection .ratingList .ratingWrapper {
+    flex: 1 1 calc(50% - 1.5rem);
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 1.5rem 1rem;
+  }
+}

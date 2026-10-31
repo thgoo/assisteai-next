@@ -141,3 +141,16 @@ test('signed-in users log out', async ({ page, context }) => {
 
   await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
 });
+
+test('on phones nothing spills past the screen\'s width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+
+  await page.goto('/');
+  await expect(page.locator('a[href^="/movies/"]').first()).toBeVisible();
+  expect(await overflow()).toBe(0);
+
+  await page.goto('/movies/9-movie-9');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 9');
+  expect(await overflow()).toBe(0);
+});
