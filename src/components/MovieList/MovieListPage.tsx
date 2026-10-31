@@ -24,7 +24,7 @@ const MovieListPage = ({
   const posters = movies.filter(movie => movie.posterUrl).length;
   const [settledPosters, setSettledPosters] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
-  // The card being opened; reset when the list hides (kept mounted by Next.js), so its overlay is back on return
+  // The card being opened; reset when the list hides (kept mounted by Next.js), so its poster can tilt again on return
   const [openingId, setOpeningId] = useState<number | null>(null);
   useEffect(() => () => setOpeningId(null), []);
   const visible = !waitForPosters || timedOut || settledPosters >= posters;

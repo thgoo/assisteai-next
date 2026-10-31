@@ -1,8 +1,7 @@
 .movieList {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  grid-template-rows: 1fr;
-  grid-gap: 2rem;
+  grid-gap: 2.6rem 2rem;
   width: 100%;
   justify-content: center;
   padding: 2rem 0;
@@ -29,9 +28,7 @@
 
 .gridItem {
   position: relative;
-  height: 0;
-  width: 100%;
-  padding-bottom: 150%;
+  min-width: 0;
 }
 
 .listText {
@@ -56,16 +53,15 @@
 }
 
 .itemWrapper {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  display: block;
+  color: inherit;
   text-decoration: none;
 
+  // Where the next page's first poster will be
   &.isSpinner {
     display: flex;
     align-items: center;
     justify-content: center;
+    aspect-ratio: 2 / 3;
   }
 }

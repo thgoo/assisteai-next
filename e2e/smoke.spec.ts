@@ -311,3 +311,23 @@ for (const way of ['"Voltar"', 'logo'] as const) {
     await expect(backdrop).toHaveCSS('opacity', '1');
   });
 }
+
+test('cards show the rating without a hover: the average on a meter, and the last one when it differs', async ({ page }) => {
+  await page.goto('/');
+  const lit = (id: number) => page.locator(`a[href^="/movies/${id}-"] i[class*="isOn"]`).count();
+
+  // Movie 5: "Muito Bom" on average and last (e2e/mock-api.ts)
+  const five = page.locator('a[href="/movies/5-movie-5"]');
+  await expect(five).toContainText('Movie 5');
+  await expect(five).toContainText('Filme·2005');
+  await expect(five).toContainText('Muito Bom');
+  await expect(five).not.toContainText('última');
+  expect(await lit(5)).toBe(6);
+
+  // Movie 6: last "Imperdível"
+  await expect(page.locator('a[href="/movies/6-movie-6"]')).toContainText('última Imperdível');
+
+  // Movie 21: "Legal" on average, four steps up the scale
+  await expect(page.locator('a[href="/movies/21-movie-21"]')).toContainText('Legal');
+  expect(await lit(21)).toBe(4);
+});

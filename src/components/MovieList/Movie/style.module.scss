@@ -1,13 +1,48 @@
+// The rating scale's colors, best first: gold for the unmissable, greens, blue, then warmer to red for the worst
+.UNMISSABLE { --rating: #f5c518; }
+.VERY_GOOD { --rating: #2fd27a; }
+.GOOD { --rating: #9be15d; }
+.COOL { --rating: #5fb3f5; }
+.BAD { --rating: #f59e42; }
+.VERY_BAD { --rating: #f0614f; }
+.STAY_AWAY { --rating: #d6334f; }
+
+.card {
+  min-width: 0;
+}
+
 .movie {
   position: relative;
   width: 100%;
-  height: 100%;
-  text-align: center;
+  aspect-ratio: 2 / 3;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  // Leaning toward the pointer (Movie); eased, so the print sways rather than snaps
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   // The frame (shadow and :before) fades in with the poster it belongs to
-  transition: filter 0.3s, box-shadow 0.3s;
+  transition: filter 0.3s, box-shadow 0.4s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: filter;
   overflow: hidden;
+
+  // Held up toward the light: it lifts off the page
+  &.isLit {
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.35);
+    transition: filter 0.3s, box-shadow 0.4s, transform 0.25s ease-out;
+
+    .glare {
+      opacity: 1;
+    }
+  }
+
+  // Clicked: flat again at once, to fly to the movie page as it lies there
+  &.isOpening {
+    transform: none;
+    transition: none;
+
+    .glare {
+      opacity: 0;
+      transition: none;
+    }
+  }
 
   // Until the poster arrives: a block a shade above the page, with a soft shimmer, without the poster's frame
   &.isLoading {
@@ -44,23 +79,11 @@
     background-repeat: no-repeat;
     background-size: 100% 1px;
     transition: opacity 0.3s;
-  }
-
-  &:hover {
-    .overlayCard {
-      transform: translate3d(0, 0, 0);
-      opacity: 1;
-    }
-  }
-
-  // Hovered when clicked: gone at once, before the card is captured to fly to the movie page
-  &.isOpening .overlayCard {
-    opacity: 0;
-    transition: none;
+    z-index: 1;
   }
 }
 
-// Below the highlight (:before) and the overlay; `will-change` makes .movie the stacking context
+// Below the highlight (:before) and the glare; `will-change` makes .movie the stacking context
 .poster {
   z-index: -1;
   object-fit: cover;
@@ -75,6 +98,27 @@
   &.isCached {
     transition: none;
   }
+}
+
+// Light on a printed poster: a wide, faint highlight where it faces the light, the far side a touch darker
+.glare {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  background:
+    radial-gradient(
+      farthest-corner circle at var(--light-x, 50%) var(--light-y, 50%),
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.06) 35%,
+      rgba(0, 0, 0, 0.08) 100%
+    );
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
 }
 
 @keyframes shimmer {
@@ -99,76 +143,92 @@
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 2px;
+  text-align: center;
   text-transform: uppercase;
   color: #ffffff;
 }
 
-.overlayCard {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  opacity: 0;
-  transform: translate3d(0, 0, 0);
-  transition: all 0.3s;
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    box-shadow: inset 0 0 1px #def;
-    background-image: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.5) 50%,
-      rgba(255, 255, 255, 0)
-    );
-    background-repeat: no-repeat;
-    background-size: 100% 1px;
+.caption {
+  // Positioned: above the leaning poster's shadow, which would grey it
+  position: relative;
+  padding: 1rem 0.2rem 0;
+  color: #ffffff;
+}
+
+.title {
+  overflow: hidden;
+  font-family: var(--font-lato), sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+  color: #9ea3ab;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  .movies { color: #01c05d; }
+  .series { color: #f86c2f; }
+}
+
+.separator {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+// One segment per rating step, worst on the left; lit up to the average
+.meter {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-top: 0.9rem;
+
+  i {
+    height: 5px;
+    border-radius: 3px;
+    background-color: #3a3d42;
+
+    &.isOn {
+      background-color: var(--rating);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--rating) 60%, transparent);
+    }
   }
+}
 
-  .movieCardInfo {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    padding: 2rem;
+.ratings {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-top: 0.6rem;
+  white-space: nowrap;
+}
 
-    .category {
-      padding: 0.4em 1.5em;
-      border-radius: 1em;
-      color: #FFFFFF;
-      font-weight: 600;
-      font-size: 0.8em;
+.average {
+  color: var(--rating, #ffffff);
+  font-family: var(--font-lato), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
 
-      &.movies { background: #01c05d }
-      &.series { background: #f86c2f }
-    }
+// Shortened rather than wrapped when the card is narrow
+.last {
+  min-width: 0;
+  overflow: hidden;
+  color: #9ea3ab;
+  font-size: 1.1rem;
+  text-overflow: ellipsis;
 
-    .ratingContainer {
-      display: flex;
-      flex-direction: column;
-      color: #FFFFFF;
-      font-size: 0.9em;
-      text-shadow: 1px 1px 0 black;
-
-      div {
-        display: flex;
-        flex-direction: column;
-        margin: 1em 0;
-
-        .rating {
-          margin-bottom: 0.5em;
-          font-size: 1.3em;
-          font-weight: 700;
-        }
-      }
-    }
+  b {
+    color: var(--rating);
+    font-weight: 700;
   }
 }

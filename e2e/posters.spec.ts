@@ -317,7 +317,8 @@ for (const screen of [{ name: 'phones', width: 390, size: 'w780', held: true }, 
 test('a slow poster shows the shimmer without its frame, which arrives with the poster', async ({ page }) => {
   const release = servePosters(page, 'hold');
   await loadSecondPage(page);
-  const movie = card(page, 25).locator(':scope > div');
+  // The poster's frame: the image's parent
+  const movie = card(page, 25).locator('img').locator('..');
   const frame = () => movie.evaluate(el => ({
     shadow: getComputedStyle(el).boxShadow,
     border: getComputedStyle(el, '::before').opacity,
@@ -331,4 +332,24 @@ test('a slow poster shows the shimmer without its frame, which arrives with the 
   release();
   await expect(movie).not.toHaveClass(/_isLoading/);
   await expect.poll(frame).toEqual({ shadow: 'rgba(0, 0, 0, 0.35) 0px 1px 3px 0px', border: '1' });
+});
+
+test('with a mouse, a poster leans toward the pointer, and still flies when clicked', async ({ page }) => {
+  servePosters(page, 'hold')();
+  const transitions = await recordPosterTransitions(page);
+  await loadSecondPage(page);
+  const poster = card(page, 25).locator('img').locator('..');
+  await poster.scrollIntoViewIfNeeded();
+  const leaning = () => poster.evaluate(el => getComputedStyle(el).transform !== 'none'
+    && !new DOMMatrix(getComputedStyle(el).transform).isIdentity);
+
+  const box = (await poster.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2, { steps: 5 });
+  await expect.poll(leaning).toBe(true);
+
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 25');
+  await expect.poll(transitions).toEqual([['::view-transition-group(poster-25)']]);
 });
