@@ -10,8 +10,7 @@
 
   // Phones: taller, so more of the image shows below the header
   @media screen and (max-width: 767px) {
-    // Plus the iPhone's status bar, which it goes under
-    padding-bottom: calc(75% + env(safe-area-inset-top, 0px));
+    padding-bottom: 75%;
     // The content starts where the bottom fade is solid
     margin-bottom: -16%;
   }

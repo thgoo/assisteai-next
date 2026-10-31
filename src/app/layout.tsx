@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { Lato, Open_Sans as OpenSans } from 'next/font/google';
 import Header from '@/components/Header/Header';
 import Providers from '@/components/Providers/Providers';
@@ -9,13 +9,6 @@ const lato = Lato({ subsets: ['latin'], weight: ['100', '300', '400', '700', '90
 
 export const metadata: Metadata = {
   title: 'Assiste Aí',
-};
-
-// The page may draw under the iPhone's status bar and notch, so the backdrop reaches the screen's top edge; the header
-// keeps its content clear of them (`env(safe-area-inset-*)`)
-export const viewport: Viewport = {
-  viewportFit: 'cover',
-  themeColor: '#202225',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

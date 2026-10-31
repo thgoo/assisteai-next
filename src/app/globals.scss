@@ -20,11 +20,10 @@ body {
 // index.js
 .backdrop-wrapper {
   // Phones: from edge to edge, past the container's padding
-  // Up behind the header, and the iPhone's status bar
-  margin: calc(-11.9rem - env(safe-area-inset-top, 0px)) -1.5rem 0;
+  margin: -11.9rem -1.5rem 0;
 
   @media screen and (min-width: 768px) {
-    margin: calc(-9.6rem - env(safe-area-inset-top, 0px)) 0 0;
+    margin: -9.6rem 0 0;
   }
 
   // No backdrop (none eligible, or the API failed): keep the content below the header

@@ -1,7 +1,6 @@
 .movieDetails {
   position: relative;
-  // Up behind the header, and the iPhone's status bar
-  margin-top: calc(-96px - env(safe-area-inset-top, 0px));
+  margin-top: -96px;
 
   // The backdrop is what pushes the content below the header
   &.hasNoBackdrop {
