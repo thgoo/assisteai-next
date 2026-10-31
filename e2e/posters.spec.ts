@@ -214,3 +214,26 @@ for (const screen of [
     expect(pageFile).toBe(cardFile);
   });
 }
+
+test('a movie opens from its card without waiting for the server, so Safari flies the poster on the first tap', async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
+  });
+  const page = await context.newPage();
+  servePosters(page, 'hold')();
+  const transitions = await recordPosterTransitions(page);
+  await loadSecondPage(page);
+  await card(page, 26).scrollIntoViewIfNeeded();
+  // Prefetched once in view
+  await page.waitForLoadState('networkidle');
+
+  const asked: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/movies/26-movie-26')) asked.push(request.url());
+  });
+  await card(page, 26).tap();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 26');
+  await expect.poll(transitions).toEqual([['::view-transition-group(poster-26)']]);
+  expect(asked).toEqual([]);
+  await context.close();
+});

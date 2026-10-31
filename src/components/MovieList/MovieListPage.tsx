@@ -46,6 +46,9 @@ const MovieListPage = ({
         <div className={classes.gridItem} key={movie.id}>
           <Link
             href={`/movies/${movie.id}-${movie.slug}`}
+            // The movie itself, not only the route's shell: the page then renders at once on the first tap, which
+            // Safari needs for the poster to fly (waiting for the server, it just swaps the page)
+            prefetch
             className={classes.itemWrapper}
             onClick={() => {
               setOpeningId(movie.id);
