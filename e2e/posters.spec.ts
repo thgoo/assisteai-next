@@ -132,9 +132,8 @@ test('new filters keep the previous results, dimmed, while their posters load, f
   await expect(page.locator('[class*="_isStale"]')).toHaveCount(0);
 });
 
-test('the poster flies from its card to the movie page and back, to the same scroll', async ({ page }) => {
-  servePosters(page, 'hold')();
-  // The view transitions started, with the posters taking part in each
+/** Records the view transitions started, with the posters taking part in each */
+async function recordPosterTransitions(page: Page) {
   await page.addInitScript(() => {
     const w = window as unknown as { posterTransitions: string[][] };
     w.posterTransitions = [];
@@ -147,7 +146,12 @@ test('the poster flies from its card to the movie page and back, to the same scr
       return transition;
     }) as typeof document.startViewTransition;
   });
-  const transitions = () => page.evaluate(() => (window as unknown as { posterTransitions: string[][] }).posterTransitions);
+  return () => page.evaluate(() => (window as unknown as { posterTransitions: string[][] }).posterTransitions);
+}
+
+test('the poster flies from its card to the movie page and back, to the same scroll', async ({ page }) => {
+  servePosters(page, 'hold')();
+  const transitions = await recordPosterTransitions(page);
 
   await loadSecondPage(page);
   await expect(card(page, 25)).toBeVisible();
@@ -163,4 +167,20 @@ test('the poster flies from its card to the movie page and back, to the same scr
   await expect.poll(transitions).toHaveLength(2);
   expect((await transitions())[1]).toEqual(['::view-transition-group(poster-25)']);
   expect(await page.evaluate(() => window.scrollY)).toBe(scrolled);
+});
+
+test('"Voltar" flies the poster back to a filtered list', async ({ page }) => {
+  servePosters(page, 'hold')();
+  const transitions = await recordPosterTransitions(page);
+  // Series are the ids divisible by 3; 27 has a poster
+  await page.goto('/?category=series');
+  await expect(card(page, 27)).toBeVisible();
+
+  await card(page, 27).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 27');
+  await page.getByRole('link', { name: 'Voltar' }).click();
+
+  await expect(page).toHaveURL('/?category=series');
+  await expect(card(page, 27)).toBeInViewport();
+  await expect.poll(transitions).toEqual([['::view-transition-group(poster-27)'], ['::view-transition-group(poster-27)']]);
 });

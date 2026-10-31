@@ -22,18 +22,32 @@ export const useListSearch = () => useSyncExternalStore(
   () => '',
 );
 
+// A link to the list (ListLink) renders it before Next.js updates the address: until then, the filters it goes to. The
+// list must render with them in the navigation's commit, for a poster to fly back to its card (<ViewTransition>)
+let pendingSearch: string | null = null;
+export const goingToListSearch = (search: string) => {
+  pendingSearch = search;
+};
+
 const subscribe = (onChange: () => void) => {
-  window.addEventListener('popstate', onChange);
-  window.addEventListener(FILTERS_CHANGE_EVENT, onChange);
+  const onHistory = () => {
+    pendingSearch = null;
+    onChange();
+  };
+  window.addEventListener('popstate', onHistory);
+  window.addEventListener(FILTERS_CHANGE_EVENT, onHistory);
   return () => {
-    window.removeEventListener('popstate', onChange);
-    window.removeEventListener(FILTERS_CHANGE_EVENT, onChange);
+    window.removeEventListener('popstate', onHistory);
+    window.removeEventListener(FILTERS_CHANGE_EVENT, onHistory);
   };
 };
 
 // The page is prerendered without filters (useSearchParams would take the list out of the static HTML), so the server
 // and hydration see none; the URL's filters apply right after
-const getSearch = () => window.location.search;
+const getSearch = () => {
+  if (pendingSearch === window.location.search) pendingSearch = null;
+  return pendingSearch ?? window.location.search;
+};
 const getServerSearch = () => '';
 
 // The same object for the same URL, so it can be a dependency
