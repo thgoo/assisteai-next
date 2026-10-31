@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, ViewTransition } from 'react';
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
 import type { Category, MovieSummary } from '@/lib/types';
@@ -14,11 +14,13 @@ type PosterStatus = 'loading' | 'loaded' | 'failed';
 
 interface MovieProps {
   movie: MovieSummary;
+  /** Clicked: its rating overlay hides, so it doesn't fly to the movie page with the card */
+  isOpening?: boolean;
   /** Called once the poster has loaded or failed */
   onPosterSettled?: () => void;
 }
 
-const Movie = ({ movie, onPosterSettled }: MovieProps) => {
+const Movie = ({ movie, isOpening = false, onPosterSettled }: MovieProps) => {
   const category = CATEGORIES[movie.category];
   const [posterStatus, setPosterStatus] = useState<PosterStatus>(movie.posterUrl ? 'loading' : 'failed');
   const [cached, setCached] = useState(false);
@@ -36,40 +38,47 @@ const Movie = ({ movie, onPosterSettled }: MovieProps) => {
   };
 
   return (
-    <div className={`${classes.movie} ${posterStatus === 'loading' ? classes.isLoading : ''}`}>
-      {movie.posterUrl && posterStatus !== 'failed' ? (
-        <Image
-          src={movie.posterUrl}
-          alt=""
-          fill
-          ref={checkCached}
-          sizes={POSTER_SIZES}
-          // Hidden pages of the list wait for their posters, which lazy images would never start
-          loading="eager"
-          className={`${classes.poster} ${posterStatus === 'loaded' ? classes.isLoaded : ''} ${cached ? classes.isCached : ''}`}
-          onLoad={() => settlePoster('loaded')}
-          onError={() => settlePoster('failed')}
-        />
-      ) : null}
-      {posterStatus === 'failed' ? <div className={classes.posterNotAvailable}>Imagem não disponível</div> : null}
-      <div className={classes.overlayCard}>
-        <div className={classes.movieCardInfo}>
-          <span className={`${classes.category} ${category.css}`}>
-            {category.name}
-          </span>
-          <div className={classes.ratingContainer}>
-            <div>
-              <span className={classes.rating}>{ratingLabel(movie.rating.average)}</span>
-              Média
-            </div>
-            <div>
-              <span className={classes.rating}>{ratingLabel(movie.rating.last)}</span>
-              Última
+    // The same name as the movie page's poster: navigating between them, the card (frame and poster) flies from one
+    // place to the other
+    <ViewTransition name={`poster-${movie.id}`} share="poster" default="none">
+      <div
+        className={`${classes.movie} ${posterStatus === 'loading' ? classes.isLoading : ''} ${
+          isOpening ? classes.isOpening : ''}`}
+      >
+        {movie.posterUrl && posterStatus !== 'failed' ? (
+          <Image
+            src={movie.posterUrl}
+            alt=""
+            fill
+            ref={checkCached}
+            sizes={POSTER_SIZES}
+            // Hidden pages of the list wait for their posters, which lazy images would never start
+            loading="eager"
+            className={`${classes.poster} ${posterStatus === 'loaded' ? classes.isLoaded : ''} ${cached ? classes.isCached : ''}`}
+            onLoad={() => settlePoster('loaded')}
+            onError={() => settlePoster('failed')}
+          />
+        ) : null}
+        {posterStatus === 'failed' ? <div className={classes.posterNotAvailable}>Imagem não disponível</div> : null}
+        <div className={classes.overlayCard}>
+          <div className={classes.movieCardInfo}>
+            <span className={`${classes.category} ${category.css}`}>
+              {category.name}
+            </span>
+            <div className={classes.ratingContainer}>
+              <div>
+                <span className={classes.rating}>{ratingLabel(movie.rating.average)}</span>
+                Média
+              </div>
+              <div>
+                <span className={classes.rating}>{ratingLabel(movie.rating.last)}</span>
+                Última
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </ViewTransition>
   );
 };
 

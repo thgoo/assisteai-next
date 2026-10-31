@@ -11,6 +11,17 @@ export const FILTERS_ELEMENT_ID = 'movie-filters';
 /** Where the list was, per set of filters (see MovieList) */
 export const scrollPositionKey = (search: string) => `scrollPosition${search}`;
 
+// The filters of the list a movie was opened from, for the movie page's "Voltar"
+const LIST_SEARCH_KEY = 'listSearch';
+export const rememberListSearch = (search: string) => window.sessionStorage.setItem(LIST_SEARCH_KEY, search);
+const noSubscription = () => () => {};
+/** '' on the server and when no list was visited (a movie opened from a shared link) */
+export const useListSearch = () => useSyncExternalStore(
+  noSubscription,
+  () => window.sessionStorage.getItem(LIST_SEARCH_KEY) ?? '',
+  () => '',
+);
+
 const subscribe = (onChange: () => void) => {
   window.addEventListener('popstate', onChange);
   window.addEventListener(FILTERS_CHANGE_EVENT, onChange);

@@ -1,3 +1,4 @@
+import { ViewTransition } from 'react';
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
 import type { MovieDetail } from '@/lib/types';
@@ -5,6 +6,7 @@ import Avatar from '../Avatar/Avatar';
 import Backdrop from '../Backdrop/Backdrop';
 import { CurrentMovie } from '../CurrentMovie/CurrentMovie';
 import Container from '../Container/Container';
+import BackToList from './BackToList';
 import Genres from './Genres/Genres';
 import RatingSummary from './RatingSummary/RatingSummary';
 import classes from './style.module.scss';
@@ -24,13 +26,18 @@ const MovieDetails = ({ movie }: { movie: MovieDetail }) => (
     />
     <Backdrop backdrop={movie.backdropUrl} />
     <Container maxWidth="lg">
+      <BackToList />
       <div className={classes.content}>
         <div className={classes.posterWrapper}>
-          <div className={`${classes.poster} magic-border`}>
-            {movie.posterUrl ? (
-              <Image src={movie.posterUrl} alt="" fill sizes="200px" priority className={classes.posterImage} />
-            ) : null}
-          </div>
+          {/* The same name as the list card's poster: navigating between them, the poster flies from one to the other,
+              its frame included (an empty frame would wait for it) */}
+          <ViewTransition name={`poster-${movie.id}`} share="poster" default="none">
+            <div className={`${classes.poster} magic-border`}>
+              {movie.posterUrl ? (
+                <Image src={movie.posterUrl} alt="" fill sizes="200px" priority className={classes.posterImage} />
+              ) : null}
+            </div>
+          </ViewTransition>
         </div>
         <div className={classes.title}>
           <h1>

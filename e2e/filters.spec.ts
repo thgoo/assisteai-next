@@ -204,3 +204,39 @@ test('while a search loads, the list on screen stays, not an older search', asyn
   await expect(page).toHaveURL('/?q=filme');
   expect(await ids(page)).not.toContain(7);
 });
+
+test('"Voltar" on a movie returns to the list it came from, filters and scroll included', async ({ page }) => {
+  await page.goto('/?category=series');
+  await expect(cards(page)).toHaveCount(9);
+  await page.mouse.wheel(0, 400);
+  await page.waitForTimeout(300);
+  const scrolled = await page.evaluate(() => window.scrollY);
+
+  await page.locator('a[href="/movies/9-movie-9"]').click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 9');
+  await page.getByRole('link', { name: 'Voltar' }).click();
+
+  await expect(page).toHaveURL('/?category=series');
+  await expect(cards(page)).toHaveCount(9);
+  await expect(page.getByRole('button', { name: 'Séries' })).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrolled);
+});
+
+test('the logo starts the list over, without filters', async ({ page }) => {
+  await page.goto('/?category=series');
+  await page.locator('a[href="/movies/9-movie-9"]').click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 9');
+  await page.getByRole('link', { name: 'Logo' }).click();
+
+  await expect(page).toHaveURL('/');
+  await expect(cards(page)).toHaveCount(24);
+});
+
+test('"Voltar" on a movie opened from a link goes to the list\'s top', async ({ page }) => {
+  await page.goto('/movies/9-movie-9');
+  await page.getByRole('link', { name: 'Voltar' }).click();
+
+  await expect(page).toHaveURL('/');
+  await expect(cards(page)).toHaveCount(24);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});

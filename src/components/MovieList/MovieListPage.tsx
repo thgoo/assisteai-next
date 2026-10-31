@@ -24,6 +24,9 @@ const MovieListPage = ({
   const posters = movies.filter(movie => movie.posterUrl).length;
   const [settledPosters, setSettledPosters] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
+  // The card being opened; reset when the list hides (kept mounted by Next.js), so its overlay is back on return
+  const [openingId, setOpeningId] = useState<number | null>(null);
+  useEffect(() => () => setOpeningId(null), []);
   const visible = !waitForPosters || timedOut || settledPosters >= posters;
 
   useEffect(() => {
@@ -41,8 +44,19 @@ const MovieListPage = ({
     <div className={visible ? classes.page : classes.hiddenPage}>
       {movies.map(movie => (
         <div className={classes.gridItem} key={movie.id}>
-          <Link href={`/movies/${movie.id}-${movie.slug}`} className={classes.itemWrapper} onClick={onOpenMovie}>
-            <Movie movie={movie} onPosterSettled={() => setSettledPosters(count => count + 1)} />
+          <Link
+            href={`/movies/${movie.id}-${movie.slug}`}
+            className={classes.itemWrapper}
+            onClick={() => {
+              setOpeningId(movie.id);
+              onOpenMovie();
+            }}
+          >
+            <Movie
+              movie={movie}
+              isOpening={openingId === movie.id}
+              onPosterSettled={() => setSettledPosters(count => count + 1)}
+            />
           </Link>
         </div>
       ))}

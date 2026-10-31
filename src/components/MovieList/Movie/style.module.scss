@@ -39,6 +39,12 @@
       opacity: 1;
     }
   }
+
+  // Hovered when clicked: gone at once, before the card is captured to fly to the movie page
+  &.isOpening .overlayCard {
+    opacity: 0;
+    transition: none;
+  }
 }
 
 // Below the highlight (:before) and the overlay; `will-change` makes .movie the stacking context

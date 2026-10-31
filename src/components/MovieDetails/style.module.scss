@@ -42,6 +42,30 @@
   }
 }
 
+.backToList {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.6rem;
+  color: #ffffff;
+  font-size: 1.4rem;
+  text-decoration: none;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 1);
+  opacity: 0.75;
+  transition: opacity 0.2s;
+  z-index: 1;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  svg {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+}
+
 .content {
   position: relative;
   display: grid;

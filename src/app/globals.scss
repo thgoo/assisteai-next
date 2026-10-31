@@ -205,3 +205,28 @@ body {
   height: 1em;
   vertical-align: -0.125em;
 }
+
+// Navigations: only the posters move (<ViewTransition> in Movie and MovieDetails), the rest swaps at once as before
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+// Clicks during the animation reach the page
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(.poster) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  useCallback, useEffect, useRef, useState,
+  useCallback, useEffect, useLayoutEffect, useRef, useState,
 } from 'react';
 import { countActiveFilters, DEFAULT_FILTERS } from '@/lib/filters';
 import type { MovieSummary, Page } from '@/lib/types';
-import useMovieFilters, { scrollPositionKey } from '../MovieFilters/useMovieFilters';
+import useMovieFilters, { rememberListSearch, scrollPositionKey } from '../MovieFilters/useMovieFilters';
 import Spinner from '../Spinner/Spinner';
 import { preloadPosters } from './Movie/posters';
 import { useMovieList } from './MovieListProvider';
@@ -115,8 +115,9 @@ const FilteredMovieList = ({ search, shownPages, onShow }: FilteredMovieListProp
   }, [scrollKey]);
   const onOpenMovie = useCallback(() => {
     saveScrollPosition();
+    rememberListSearch(search);
     leaving.current = true;
-  }, [saveScrollPosition]);
+  }, [saveScrollPosition, search]);
 
   /** Scrolls back once the list is tall enough (cached pages can arrive right after mounting), or anyway when `force`. */
   const restoreScrollPosition = useCallback((force: boolean) => {
@@ -139,12 +140,16 @@ const FilteredMovieList = ({ search, shownPages, onShow }: FilteredMovieListProp
   }, [restoreScrollPosition]);
 
   // Runs each time the list shows: with Cache Components, Next.js keeps a page it leaves mounted but hidden (React's
-  // <Activity>), so coming back reruns effects while refs and state stay as they were
-  useEffect(() => {
+  // <Activity>), so coming back reruns effects while refs and state stay as they were. Before the page paints, and
+  // before a view transition captures it: a poster flying back from the movie page lands on its card, scrolled to
+  useLayoutEffect(() => {
     window.history.scrollRestoration = 'manual';
     leaving.current = false;
     restoring.current = true;
     restoreRef.current(false);
+  }, []);
+
+  useEffect(() => {
     const giveUp = setTimeout(() => restoreRef.current(true), RESTORE_TIMEOUT_MS);
 
     let timeout: ReturnType<typeof setTimeout>;

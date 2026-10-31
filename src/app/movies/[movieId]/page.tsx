@@ -7,6 +7,9 @@ import type { MovieDetail } from '@/lib/types';
 
 // Movies outside the build are generated on their first visit, which waits for them: so an unknown id answers a real 404
 export const ensureStatic = 'navigation';
+// The page waits for its movie on purpose, rather than a loading fallback: rendering it in the navigation's commit is
+// what lets the poster fly from its list card (<ViewTransition>), and the static output keeps that wait short
+export const instant = false;
 
 export async function generateStaticParams() {
   const { data: movies } = await getLatestMovies();
