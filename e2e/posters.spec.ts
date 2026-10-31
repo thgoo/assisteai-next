@@ -334,14 +334,14 @@ test('a slow poster shows the shimmer without its frame, which arrives with the 
   await expect.poll(frame).toEqual({ shadow: 'rgba(0, 0, 0, 0.35) 0px 1px 3px 0px', border: '1' });
 });
 
-test('with a mouse, a poster leans toward the pointer, and still flies when clicked', async ({ page }) => {
+test('with a mouse, a poster leans toward the pointer, flies when clicked, and lies flat when back in the list', async ({ page }) => {
   servePosters(page, 'hold')();
   const transitions = await recordPosterTransitions(page);
   await loadSecondPage(page);
   const poster = card(page, 25).locator('img').locator('..');
   await poster.scrollIntoViewIfNeeded();
-  const leaning = () => poster.evaluate(el => getComputedStyle(el).transform !== 'none'
-    && !new DOMMatrix(getComputedStyle(el).transform).isIdentity);
+  // Its angles toward the pointer (Movie); none when flat
+  const leaning = () => poster.evaluate(el => el.style.getPropertyValue('--tilt-x') !== '');
 
   const box = (await poster.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -352,4 +352,10 @@ test('with a mouse, a poster leans toward the pointer, and still flies when clic
   await page.mouse.up();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 25');
   await expect.poll(transitions).toEqual([['::view-transition-group(poster-25)']]);
+
+  // Back in the list (the pointer never left the card), it lies flat
+  await page.getByRole('link', { name: 'Voltar' }).click();
+  await expect(poster).toBeInViewport();
+  await expect.poll(transitions).toHaveLength(2);
+  await expect.poll(leaning).toBe(false);
 });

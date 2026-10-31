@@ -1,4 +1,6 @@
-import { useCallback, useRef, useState, type PointerEvent } from 'react';
+import {
+  useCallback, useEffect, useRef, useState, type PointerEvent,
+} from 'react';
 import Image from 'next/image';
 import { RATING_LABELS, ratingLabel } from '@/lib/ratings';
 import PosterTransition from '../../PosterTransition/PosterTransition';
@@ -16,6 +18,12 @@ const RATING_KEYS = Object.keys(RATING_LABELS) as RatingKey[];
 
 // The poster leans this far toward the pointer, like a print held in the hand
 const MAX_TILT_DEG = 6;
+
+const untilt = (element: HTMLElement | null) => {
+  element?.style.removeProperty('--tilt-x');
+  element?.style.removeProperty('--tilt-y');
+  element?.classList.remove(classes.isLit);
+};
 
 /** Devices with a mouse, whose users don't ask for less motion */
 const canTilt = () => window
@@ -63,13 +71,12 @@ const Movie = ({ movie, isOpening = false, onPosterSettled }: MovieProps) => {
     element.classList.add(classes.isLit);
   };
 
-  const untilt = () => {
+  // Clicked, the pointer never leaves: the list goes away under it. Flat again when it hides (kept mounted by Next.js),
+  // or the poster would fly back to a leaning card
+  useEffect(() => {
     const element = poster.current;
-    if (!element) return;
-    element.style.removeProperty('--tilt-x');
-    element.style.removeProperty('--tilt-y');
-    element.classList.remove(classes.isLit);
-  };
+    return () => untilt(element);
+  }, []);
 
   const { average, last, count } = movie.rating;
   // Segments lit on the meter: 7 for the best rating, 1 for the worst
@@ -85,7 +92,8 @@ const Movie = ({ movie, isOpening = false, onPosterSettled }: MovieProps) => {
           className={`${classes.movie} ${posterStatus === 'loading' ? classes.isLoading : ''} ${
             cached ? classes.isCached : ''} ${isOpening ? classes.isOpening : ''}`}
           onPointerMove={tilt}
-          onPointerLeave={untilt}
+          onPointerLeave={() => untilt(poster.current)}
+          onClick={() => untilt(poster.current)}
         >
           {movie.posterUrl && posterStatus !== 'failed' ? (
             <Image
