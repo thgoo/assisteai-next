@@ -47,7 +47,8 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     year: 2000 + id,
     // Only the second page has posters; e2e/posters.spec.ts serves them from the browser
     posterUrl: id > PAGE_SIZE ? `https://image.tmdb.org/t/p/w500/e2e-poster-${id}.jpg` : null,
-    backdropUrl: null,
+    // The second page has backdrops too, at TMDb's paths (phones ask for a smaller size)
+    backdropUrl: id > PAGE_SIZE ? `http://localhost:${PORT}/t/p/w1280/e2e-backdrop-${id}.png` : null,
     rating: {
       count: raters.length,
       average: (id <= 20 && 'VERY_GOOD') || (id <= 24 && 'COOL') || 'VERY_BAD',
@@ -193,7 +194,9 @@ Bun.serve({
     // With a backdrop, like production (it takes space above the list, which scroll restoration depends on)
     if (route === 'GET /movies/random') return json(req, { ...movies[0], backdropUrl: `http://localhost:${PORT}/backdrop.png` });
 
-    if (route === 'GET /backdrop.png') return new Response(Bun.file(new URL('../public/img/logo-square.png', import.meta.url)));
+    if (route === 'GET /backdrop.png' || /^GET \/t\/p\/w\d+\/e2e-backdrop-\d+\.png$/.test(route)) {
+      return new Response(Bun.file(new URL('../public/img/logo-square.png', import.meta.url)));
+    }
 
     const movieMatch = route.match(/^GET \/movies\/(\d+)$/);
     if (movieMatch) {

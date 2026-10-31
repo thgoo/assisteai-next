@@ -1,3 +1,4 @@
+import BackdropImage from './BackdropImage';
 import classes from './style.module.scss';
 
 interface BackdropProps {
@@ -12,10 +13,7 @@ const Backdrop = ({ backdrop, colorless = false }: BackdropProps) => (
   backdrop
     ? (
       <div className={classes.backdrop}>
-        <div
-          className={`${classes.background} ${colorless ? classes.isColorless : ''}`}
-          style={{ backgroundImage: `url(${backdrop})` }}
-        />
+        <BackdropImage url={backdrop} colorless={colorless} />
       </div>
     )
     : null

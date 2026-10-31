@@ -4,6 +4,27 @@ import { ViewTransition, type ReactNode } from 'react';
 
 type ShareHandler = NonNullable<React.ComponentProps<typeof ViewTransition>['onShare']>;
 
+const FLIGHT_EVENT = 'posterflight';
+let flight: Promise<void> | null = null;
+
+/** Calls `onFlight` with the landing of the poster flying now, if any, and of the next ones until unsubscribed */
+export function watchPosterFlights(onFlight: (landing: Promise<void>) => void) {
+  if (flight) onFlight(flight);
+  const listener = () => {
+    if (flight) onFlight(flight);
+  };
+  window.addEventListener(FLIGHT_EVENT, listener);
+  return () => window.removeEventListener(FLIGHT_EVENT, listener);
+}
+
+const announceFlight = (animation: Animation) => {
+  const landing = animation.finished.then(() => {}, () => {}).finally(() => {
+    if (flight === landing) flight = null;
+  });
+  flight = landing;
+  window.dispatchEvent(new Event(FLIGHT_EVENT));
+};
+
 // The browser flies the poster by animating its width and height, which lays it out again on every frame: smooth on
 // desktops, choppy on phones. The card and the movie page's poster share their 2:3 shape, so the same flight is a
 // scale from the destination's size, which the GPU runs alone
@@ -23,6 +44,7 @@ const flyWithTransformOnly: ShareHandler = (instance) => {
       { ...from, width: to.width, height: to.height, transform: `${String(from.transform)} scale(${scaleX}, ${scaleY})` },
       to,
     ]);
+    announceFlight(animation);
   }
 };
 

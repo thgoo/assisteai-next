@@ -270,3 +270,46 @@ test('on phones the poster flies by transform alone, not by resizing every frame
     expect(flight[0]).toBe(flight[1]);
   }
 });
+
+for (const screen of [{ name: 'phones', width: 390, size: 'w780', held: true }, { name: 'wide screens', width: 1280, size: 'w1280', held: false }]) {
+  test(`on ${screen.name} the movie page's backdrop (${screen.size}) ${screen.held ? 'waits for the flying poster to land' : 'shows at once'}`, async ({ page }) => {
+    await page.setViewportSize({ width: screen.width, height: 844 });
+    servePosters(page, 'hold')();
+    // The backdrop arrives only when the test says so
+    const asked: string[] = [];
+    let sendBackdrop = () => {};
+    const backdropSent = new Promise<void>((resolve) => {
+      sendBackdrop = resolve;
+    });
+    await page.route('**/e2e-backdrop-*', async (route) => {
+      asked.push(new URL(route.request().url()).pathname);
+      await backdropSent;
+      await route.continue();
+    });
+    await loadSecondPage(page);
+    await card(page, 25).scrollIntoViewIfNeeded();
+    // A slow flight, to look at it mid-air
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Animation.enable');
+    await cdp.send('Animation.setPlaybackRate', { playbackRate: 0.1 });
+
+    await card(page, 25).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 25');
+    const backdrop = page.locator('img[src*="e2e-backdrop-25"]');
+    await expect.poll(() => asked).toEqual([`/t/p/${screen.size}/e2e-backdrop-25.png`]);
+    const flying = () => page.evaluate(() => document.getAnimations()
+      .some(animation => (animation.effect as KeyframeEffect).pseudoElement?.startsWith('::view-transition-group(poster-')));
+    expect(await flying()).toBe(true);
+
+    sendBackdrop();
+    await expect.poll(() => backdrop.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    if (screen.held) {
+      expect(await flying()).toBe(true);
+      await expect(backdrop).toHaveCSS('visibility', 'hidden');
+      await cdp.send('Animation.setPlaybackRate', { playbackRate: 1 });
+      await expect.poll(flying).toBe(false);
+    }
+    await expect(backdrop).toHaveCSS('visibility', 'visible');
+    await expect(backdrop).toHaveCSS('opacity', '1');
+  });
+}
