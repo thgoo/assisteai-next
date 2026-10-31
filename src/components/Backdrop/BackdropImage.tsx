@@ -6,6 +6,10 @@ import classes from './style.module.scss';
 
 const PHONES = '(max-width: 767px)';
 
+// Backdrops loaded during this visit: a new image of one (the list's, coming back to it) isn't `complete` at once, but
+// shows without a fade
+const loaded = new Set<string>();
+
 // TMDb's backdrops come at 1280px wide; phones show them at their screen's width, for which 780px is plenty
 const smallerOnPhones = (url: string) => url.replace('/t/p/w1280/', '/t/p/w780/');
 
@@ -22,8 +26,13 @@ const BackdropImage = ({ url, colorless }: BackdropImageProps) => {
   const [isLoading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!image.current?.complete) setLoading(true);
-  }, []);
+    if (!image.current?.complete && !loaded.has(url)) setLoading(true);
+  }, [url]);
+
+  const settle = () => {
+    loaded.add(url);
+    setLoading(false);
+  };
 
   // Phones: an image arriving while the poster flies here would be decoded and painted mid-flight, dropping frames;
   // until it lands, it waits unpainted. One already there (a page seen before) stays
@@ -43,7 +52,7 @@ const BackdropImage = ({ url, colorless }: BackdropImageProps) => {
         decoding="async"
         className={`${classes.background} ${colorless ? classes.isColorless : ''} ${isHeld ? classes.isHeld : ''} ${
           isLoading ? classes.isLoading : ''}`}
-        onLoad={() => setLoading(false)}
+        onLoad={settle}
         onError={() => setLoading(false)}
       />
     </picture>

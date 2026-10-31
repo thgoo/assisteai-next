@@ -290,3 +290,24 @@ test('every visit draws its own random backdrop', async ({ browser }) => {
   }));
   expect(new Set(draws).size).toBeGreaterThan(1);
 });
+
+for (const way of ['"Voltar"', 'logo'] as const) {
+  test(`coming back to the list with the ${way} doesn't wait for the server's new backdrop`, async ({ page }) => {
+    await page.goto('/');
+    // Streamed in, it is briefly in the page twice (React moves it into place)
+    const backdrop = page.locator('img[src*="/backdrop.png"]').filter({ visible: true });
+    await expect(backdrop).toBeVisible();
+    await page.locator('a[href="/movies/8-movie-8"]').click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 8');
+    // The list's page takes 2 s to answer from now on
+    await page.route(/\/\?(.*&)?_rsc=/, async (route) => {
+      if (!route.request().headers()['next-router-prefetch']) await new Promise((resolve) => { setTimeout(resolve, 2_000); });
+      await route.continue().catch(() => {});
+    });
+
+    await page.getByRole('link', { name: way === 'logo' ? 'Logo' : 'Voltar' }).click();
+    await expect(page.locator('a[href="/movies/8-movie-8"]')).toBeVisible({ timeout: 1_000 });
+    await expect(backdrop).toBeVisible({ timeout: 1_000 });
+    await expect(backdrop).toHaveCSS('opacity', '1');
+  });
+}

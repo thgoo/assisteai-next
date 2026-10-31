@@ -23,11 +23,13 @@ const SessionBackdrop = ({ backdrop }: { backdrop: string | null }) => {
 };
 
 /**
- * Coming back to the list, the visit's backdrop at once; otherwise `children`, which draw it. Waiting for the server's
- * new draw (unused) would leave the backdrop's place empty until it answers.
+ * Coming back to the list, the visit's backdrop at once; otherwise `children`, which draw it. Rendering them again
+ * would hold the whole navigation until the server's new draw (unused) arrives: a transition keeps the previous page
+ * rather than show a Suspense fallback again.
  */
 export const KeptBackdrop = ({ children }: { children: ReactNode }) => {
-  const [url] = useState(() => (isBrowser ? kept : undefined));
+  // Read on every render: the list's page stays mounted, and the draw is kept after this first rendered
+  const url = isBrowser ? kept : undefined;
 
   return url === undefined ? children : <Backdrop backdrop={url} colorless />;
 };
