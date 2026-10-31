@@ -174,3 +174,30 @@ test('on phones "Nova indicação" floats at the bottom right, on every page', a
   await button.click();
   await expect(page.getByLabel('Filme/Série *')).toBeVisible();
 });
+
+test('on wide screens "Nova indicação" docks at the bottom right once the header scrolls away', async ({ page, context }) => {
+  await signIn(context);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/');
+  const button = page.getByRole('button', { name: 'Nova indicação' });
+  const corner = async () => {
+    const box = (await button.boundingBox())!;
+    return box.x + box.width > 1280 - 48 && box.y + box.height > 720 - 48;
+  };
+
+  await expect(button).toBeInViewport();
+  expect(await corner()).toBe(false);
+
+  await page.mouse.wheel(0, 1_000);
+  await expect.poll(corner).toBe(true);
+  await expect(button).toHaveCount(1);
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(corner).toBe(false);
+  await expect(button).toHaveCount(1);
+
+  await page.mouse.wheel(0, 1_000);
+  await expect.poll(corner).toBe(true);
+  await button.click();
+  await expect(page.getByLabel('Filme/Série *')).toBeVisible();
+});

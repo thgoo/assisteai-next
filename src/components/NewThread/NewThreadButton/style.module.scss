@@ -3,11 +3,10 @@
 // The site's accent (MovieFilters' active options)
 $blue: #4d69b4;
 
-.newThreadButton {
+@mixin button {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.8rem;
   border: 0;
   background-color: $blue;
   color: #ffffff;
@@ -24,34 +23,91 @@ $blue: #4d69b4;
   }
 
   svg {
+    flex-shrink: 0;
     width: 2rem;
     height: 2rem;
   }
+}
+
+// In the header, on wide screens
+@mixin wide {
+  height: 38px;
+  padding: 0 1.6rem;
+  border-radius: 5px;
+  font-size: 1.4rem;
+  white-space: nowrap;
+
+  .label {
+    margin-left: 0.8rem;
+  }
+}
+
+// Fixed at the bottom right
+@mixin round($gap) {
+  position: fixed;
+  right: $gap;
+  bottom: calc(#{$gap} + env(safe-area-inset-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+
+  .label {
+    display: none;
+  }
+}
+
+.newThreadButton {
+  @include button;
 
   // Phones: always at hand while scrolling the list
   @media screen and (max-width: 767px) {
-    position: fixed;
-    right: 1.6rem;
-    bottom: calc(1.6rem + env(safe-area-inset-bottom));
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-
-    svg {
-      width: 2.6rem;
-      height: 2.6rem;
-    }
-
-    .label {
-      display: none;
-    }
+    @include round(1.6rem);
   }
 
   @media screen and (min-width: 768px) {
-    height: 38px;
-    padding: 0 1.6rem;
-    border-radius: 5px;
-    font-size: 1.4rem;
+    @include wide;
+  }
+
+  // Docked, or on its way: still taking its room in the header
+  &.isAway {
+    visibility: hidden;
+  }
+}
+
+// Wide screens: where the header's button goes once it scrolls away
+.dock {
+  @include button;
+  @include round(2.4rem);
+  visibility: hidden;
+
+  &.isDocked {
+    visibility: visible;
+  }
+
+  @media screen and (max-width: 767px) {
+    display: none;
+  }
+}
+
+// The button on its way between the header and the dock; the animation sets its place, size and roundness
+.ghost {
+  @include button;
+  @include wide;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: none;
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  pointer-events: none;
+
+  &.isMoving {
+    display: flex;
+  }
+
+  .label {
+    overflow: hidden;
   }
 }
