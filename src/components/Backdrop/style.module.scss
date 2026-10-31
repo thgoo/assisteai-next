@@ -129,6 +129,12 @@
       filter: grayscale(.5);
     }
 
+    // Still loading (BackdropImage); then it fades in
+    &.isLoading {
+      opacity: 0;
+      transition: none;
+    }
+
     // Waiting for the poster to land (BackdropImage); then it fades in
     &.isHeld {
       visibility: hidden;

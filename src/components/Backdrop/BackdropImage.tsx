@@ -18,6 +18,12 @@ interface BackdropImageProps {
 const BackdropImage = ({ url, colorless }: BackdropImageProps) => {
   const image = useRef<HTMLImageElement>(null);
   const [isHeld, setHeld] = useState(false);
+  // Not loaded yet once on screen: it fades in when it is, rather than popping in
+  const [isLoading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!image.current?.complete) setLoading(true);
+  }, []);
 
   // Phones: an image arriving while the poster flies here would be decoded and painted mid-flight, dropping frames;
   // until it lands, it waits unpainted. One already there (a page seen before) stays
@@ -35,7 +41,10 @@ const BackdropImage = ({ url, colorless }: BackdropImageProps) => {
         src={url}
         alt=""
         decoding="async"
-        className={`${classes.background} ${colorless ? classes.isColorless : ''} ${isHeld ? classes.isHeld : ''}`}
+        className={`${classes.background} ${colorless ? classes.isColorless : ''} ${isHeld ? classes.isHeld : ''} ${
+          isLoading ? classes.isLoading : ''}`}
+        onLoad={() => setLoading(false)}
+        onError={() => setLoading(false)}
       />
     </picture>
   );

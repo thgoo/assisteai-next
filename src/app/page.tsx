@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { BackdropPlaceholder } from '@/components/Backdrop/Backdrop';
-import SessionBackdrop from '@/components/Backdrop/SessionBackdrop';
+import SessionBackdrop, { KeptBackdrop } from '@/components/Backdrop/SessionBackdrop';
 import MovieFilters from '@/components/MovieFilters/MovieFilters';
 import MovieList from '@/components/MovieList/MovieList';
 import MovieListProvider from '@/components/MovieList/MovieListProvider';
@@ -20,9 +20,11 @@ export default async function HomePage() {
     <MovieListProvider firstPage={firstPage}>
       <div className="container">
         <div className="backdrop-wrapper">
-          <Suspense fallback={<BackdropPlaceholder />}>
-            <RandomBackdrop />
-          </Suspense>
+          <KeptBackdrop>
+            <Suspense fallback={<BackdropPlaceholder />}>
+              <RandomBackdrop />
+            </Suspense>
+          </KeptBackdrop>
         </div>
         <div className="actions-wrapper">
           <MovieFilters />

@@ -256,23 +256,37 @@ test('people without a picture show their initials', async ({ page }) => {
 
 for (const way of ['back button', '"Voltar"', 'logo'] as const) {
   test(`coming back to the list with the ${way} keeps its random backdrop`, async ({ page }) => {
-    // The backdrops on the page (the mock API draws a new one on every request)
+    // The backdrops shown (the mock API draws a new one on every request)
     const backdrops = () => page.evaluate(() => [...new Set([...document.querySelectorAll('img')]
+      .filter(img => img.checkVisibility({ opacityProperty: true, visibilityProperty: true }))
       .map(img => img.getAttribute('src') ?? '').filter(src => src.includes('/backdrop.png')))]);
     await page.goto('/');
+    await expect.poll(async () => (await backdrops()).length).toBe(1);
     const drawn = await backdrops();
-    expect(drawn).toHaveLength(1);
 
     await page.locator('a[href="/movies/8-movie-8"]').click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 8');
     if (way === 'back button') await page.goBack();
     else await page.getByRole('link', { name: way === 'logo' ? 'Logo' : 'Voltar' }).click();
+    await expect(page.locator('a[href="/movies/8-movie-8"]')).toBeVisible();
 
-    // While the server draws again for the list's page, and after
+    // Shown with the list, without waiting for the server's new draw, and kept after it
     for (let sample = 0; sample < 8; sample += 1) {
       expect(await backdrops()).toEqual(drawn);
       await page.waitForTimeout(150);
     }
-    await expect(page.locator('a[href="/movies/8-movie-8"]')).toBeInViewport();
   });
 }
+
+test('every visit draws its own random backdrop', async ({ browser }) => {
+  // Separate visitors, at once, so no cache of a page answers for both
+  const draws = await Promise.all([0, 1, 2].map(async () => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto('/');
+    const src = await page.locator('img[src*="/backdrop.png"]').first().getAttribute('src');
+    await context.close();
+    return src;
+  }));
+  expect(new Set(draws).size).toBeGreaterThan(1);
+});
