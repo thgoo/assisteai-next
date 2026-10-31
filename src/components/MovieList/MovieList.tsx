@@ -4,6 +4,7 @@ import {
   useCallback, useEffect, useRef, useState,
 } from 'react';
 import { countActiveFilters, DEFAULT_FILTERS } from '@/lib/filters';
+import type { MovieSummary, Page } from '@/lib/types';
 import useMovieFilters, { scrollPositionKey } from '../MovieFilters/useMovieFilters';
 import Spinner from '../Spinner/Spinner';
 import { preloadPosters } from './Movie/posters';
@@ -16,26 +17,41 @@ const RESTORE_TIMEOUT_MS = 2000;
 /** New filters that answer faster than this swap the results without dimming the previous ones first */
 const DIM_DELAY_MS = 200;
 
+type Pages = Page<MovieSummary>[];
+
 /** One list per set of filters (`key`), each with its own pages and scroll position. */
 const MovieList = () => {
   const { search } = useMovieFilters();
+  // The results on screen, for the next filters to keep while theirs load
+  const [shownPages, setShownPages] = useState<Pages>();
 
-  return <FilteredMovieList key={search} search={search} />;
+  return <FilteredMovieList key={search} search={search} shownPages={shownPages} onShow={setShownPages} />;
 };
 
-const FilteredMovieList = ({ search }: { search: string }) => {
+interface FilteredMovieListProps {
+  search: string;
+  /** The previous filters' results */
+  shownPages: Pages | undefined;
+  onShow: (pages: Pages) => void;
+}
+
+const FilteredMovieList = ({ search, shownPages, onShow }: FilteredMovieListProps) => {
   const {
-    pages: currentPages, nextPage, isValidating, isStale, failed, hasMore,
+    pages: currentPages, nextPage, isValidating, failed, hasMore,
   } = useMovieList();
-  // New filters keep the previous results on screen until theirs arrive with the first page's posters, then swap them
-  // in one go, instead of cards blinking through the loading states
-  const [previousPages, setPreviousPages] = useState(isStale ? currentPages : null);
+  // New filters without a cached list keep the previous results on screen until theirs arrive with the first page's
+  // posters, then swap them in one go, instead of cards blinking through the loading states
+  const [previousPages, setPreviousPages] = useState(currentPages ? null : shownPages ?? null);
   const waiting = previousPages !== null;
   const pages = previousPages ?? currentPages;
+
+  useEffect(() => {
+    if (!waiting && currentPages) onShow(currentPages);
+  }, [waiting, currentPages, onShow]);
   const [dimmed, setDimmed] = useState(false);
 
   useEffect(() => {
-    if (!previousPages || isStale) return undefined;
+    if (!previousPages || (!currentPages && !failed)) return undefined;
     let cancelled = false;
     const posters = (currentPages?.[0]?.data ?? []).flatMap(movie => (movie.posterUrl ? [movie.posterUrl] : []));
     preloadPosters(posters, POSTERS_TIMEOUT_MS).then(() => {
@@ -44,7 +60,7 @@ const FilteredMovieList = ({ search }: { search: string }) => {
     return () => {
       cancelled = true;
     };
-  }, [previousPages, isStale, currentPages]);
+  }, [previousPages, currentPages, failed]);
 
   useEffect(() => {
     if (!waiting) return undefined;

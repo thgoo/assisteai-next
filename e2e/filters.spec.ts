@@ -180,3 +180,27 @@ test('while new filters load, the previous results stay, dimmed', async ({ page 
   await expect(cards(page)).toHaveCount(9);
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 });
+
+test('while a search loads, the list on screen stays, not an older search', async ({ page }) => {
+  await page.goto('/');
+  await search(page).fill('acao');
+  await expect(cards(page)).toHaveCount(1);
+  await search(page).fill('');
+  await expect(cards(page)).toHaveCount(24);
+
+  let answer = () => {};
+  await page.route('**/movies?q=filme*', async (route) => {
+    await new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    await route.continue();
+  });
+  await search(page).fill('filme');
+  await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+  await expect(cards(page)).toHaveCount(24);
+
+  answer();
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await expect(page).toHaveURL('/?q=filme');
+  expect(await ids(page)).not.toContain(7);
+});
