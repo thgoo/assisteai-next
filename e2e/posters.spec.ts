@@ -215,7 +215,7 @@ for (const screen of [
   });
 }
 
-test('a movie opens from its card without waiting for the server, so Safari flies the poster on the first tap', async ({ browser }) => {
+test('a movie opens from its card without waiting for the server, already on the first tap', async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
   });
