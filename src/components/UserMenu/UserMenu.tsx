@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
-import { CircleUser, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import type { User } from '@/lib/types';
+import Avatar from '../Avatar/Avatar';
 import classes from './style.module.scss';
 import transitions from './transitions.module.scss';
 
@@ -40,20 +41,11 @@ const UserMenu = ({ user, onLogout }: UserMenuProps) => {
     <div className={classes.userMenu} ref={ref}>
       <button type="button" onClick={() => setIsOpen(open => !open)}>
         <div className={classes.name}>{user.name}</div>
-        <div
-          className={classes.avatar}
-          style={{ backgroundImage: user.avatarUrl ? `url(${user.avatarUrl})` : undefined }}
-        />
+        <Avatar name={user.name} url={user.avatarUrl} size={32} className={classes.avatar} />
       </button>
       <CSSTransition nodeRef={menuRef} in={isOpen} timeout={300} classNames={transitions} unmountOnExit>
         <div className={classes.menu} ref={menuRef}>
           <ul>
-            <li>
-              <button type="button">
-                <div className={classes.icon}><CircleUser /></div>
-                Meu perfil
-              </button>
-            </li>
             <li>
               <button type="button" onClick={onLogout}>
                 <div className={classes.icon}><LogOut /></div>
