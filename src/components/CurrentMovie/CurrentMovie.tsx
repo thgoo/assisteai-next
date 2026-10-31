@@ -5,18 +5,19 @@ import {
 } from 'react';
 import type { MovieSummary } from '@/lib/types';
 
-/** What the "Nova indicação" form needs to find the movie on screen among TMDb's titles */
-export type TitleSuggestion = Pick<MovieSummary, 'title' | 'originalTitle' | 'year' | 'category'>;
+/** The movie on screen, as the "Nova indicação" form shows it, and who rated it already */
+export type CurrentMovieInfo = Pick<MovieSummary, 'id' | 'title' | 'originalTitle' | 'year' | 'category' | 'posterUrl'>
+  & { raterIds: number[] };
 
 interface CurrentMovieContextValue {
-  movie: TitleSuggestion | null;
-  setMovie: (movie: TitleSuggestion | null) => void;
+  movie: CurrentMovieInfo | null;
+  setMovie: (movie: CurrentMovieInfo | null) => void;
 }
 
 const CurrentMovieContext = createContext<CurrentMovieContextValue | null>(null);
 
 export function CurrentMovieProvider({ children }: { children: React.ReactNode }) {
-  const [movie, setMovie] = useState<TitleSuggestion | null>(null);
+  const [movie, setMovie] = useState<CurrentMovieInfo | null>(null);
   const value = useMemo(() => ({ movie, setMovie }), [movie]);
 
   return <CurrentMovieContext.Provider value={value}>{children}</CurrentMovieContext.Provider>;
@@ -34,18 +35,13 @@ export const useCurrentMovie = () => {
  * Rendered by a movie's page to mark it as the one on screen. Leaving the page (or Next.js hiding it, kept mounted in
  * an <Activity>) runs the cleanup.
  */
-export const CurrentMovie = ({
-  title, originalTitle, year, category,
-}: TitleSuggestion) => {
-  const context = useContext(CurrentMovieContext);
-  const setMovie = context?.setMovie;
+export const CurrentMovie = ({ movie }: { movie: CurrentMovieInfo }) => {
+  const setMovie = useContext(CurrentMovieContext)?.setMovie;
 
   useEffect(() => {
-    setMovie?.({
-      title, originalTitle, year, category,
-    });
+    setMovie?.(movie);
     return () => setMovie?.(null);
-  }, [setMovie, title, originalTitle, year, category]);
+  }, [setMovie, movie]);
 
   return null;
 };

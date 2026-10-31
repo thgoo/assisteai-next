@@ -12,10 +12,15 @@ import classes from './style.module.scss';
 const MovieDetails = ({ movie }: { movie: MovieDetail }) => (
   <div className={`${classes.movieDetails} ${movie.backdropUrl ? '' : classes.hasNoBackdrop}`}>
     <CurrentMovie
-      title={movie.title}
-      originalTitle={movie.originalTitle}
-      year={movie.year}
-      category={movie.category}
+      movie={{
+        id: movie.id,
+        title: movie.title,
+        originalTitle: movie.originalTitle,
+        year: movie.year,
+        category: movie.category,
+        posterUrl: movie.posterUrl,
+        raterIds: movie.ratings.map(rating => rating.user.id),
+      }}
     />
     <Backdrop backdrop={movie.backdropUrl} />
     <Container maxWidth="lg">

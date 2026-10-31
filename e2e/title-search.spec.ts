@@ -136,23 +136,44 @@ test('the suggestions float over the modal instead of making it scroll', async (
   expect(modalScrolls).toBe(false);
 });
 
-test('on a movie\'s page the form starts from that movie', async ({ page, context }) => {
+test('on a movie\'s page the form starts from that movie, sent by its id', async ({ page, context }) => {
   await signIn(context);
+  // The signed-in user rated every 4th id: not this one
   await page.goto('/movies/10-movie-10');
   await page.getByRole('button', { name: 'Nova indicação' }).click();
 
-  await expect(page.getByText('Filme 10', { exact: true }).last()).toBeVisible();
+  // No search: picked right away
   await expect(page.getByRole('button', { name: 'Trocar título' })).toBeVisible();
-  await expect(page.locator('input[name="url"]')).toHaveValue('https://www.themoviedb.org/movie/10010');
+  await expect(page.locator('form').getByText('Filme 10', { exact: true })).toBeVisible();
+
+  await page.getByLabel('Avaliação *').selectOption('GOOD');
+  const request = ratingRequest(page);
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  expect((await request).postDataJSON()).toEqual({ movieId: 10, rating: 'GOOD', comment: '' });
+  await expect(page.getByText('Sua avaliação foi enviada com sucesso.')).toBeVisible();
 });
 
-test('on the page of a movie already rated, the form says so', async ({ page, context }) => {
+test('on the page of a movie already rated, the form starts empty', async ({ page, context }) => {
   await signIn(context);
   await page.goto('/movies/8-movie-8');
   await page.getByRole('button', { name: 'Nova indicação' }).click();
 
-  await expect(page.getByRole('option', { name: /Filme 8.*Você já avaliou/ })).toBeVisible();
-  await expect(page.locator('input[name="url"]')).toHaveValue('');
+  await expect(page.getByLabel('Filme/Série *')).toHaveValue('');
+  await expect(page.getByRole('button', { name: 'Trocar título' })).toHaveCount(0);
+});
+
+test('the movie on screen can be swapped for a search', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/movies/10-movie-10');
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+  await page.getByRole('button', { name: 'Trocar título' }).click();
+
+  await page.getByRole('combobox', { name: 'Filme/Série *' }).fill('matrix');
+  await suggestions(page).filter({ hasText: 'The Matrix' }).first().click();
+  await page.getByLabel('Avaliação *').selectOption('GOOD');
+  const request = ratingRequest(page);
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  expect((await request).postDataJSON()).toEqual({ url: 'https://www.themoviedb.org/movie/603', rating: 'GOOD', comment: '' });
 });
 
 test('elsewhere the form starts empty', async ({ page, context }) => {

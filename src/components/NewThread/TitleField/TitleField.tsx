@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import type { Category, TitleResult } from '@/lib/types';
-import type { TitleSuggestion } from '../../CurrentMovie/CurrentMovie';
+import type { CurrentMovieInfo } from '../../CurrentMovie/CurrentMovie';
 import classes from './style.module.scss';
 
 const MIN_QUERY_LENGTH = 2;
@@ -35,22 +35,31 @@ interface Search {
   results: TitleResult[];
 }
 
+/** A TMDb title from the search, sent by its link; or a movie of the site's own, sent by its id */
+type PickedTitle = Pick<TitleResult, 'category' | 'title' | 'originalTitle' | 'year' | 'posterUrl'>
+  & ({ url: string } | { movieId: number });
+
 interface TitleFieldProps {
   id: string;
-  /** The form field holding the title's link, for `POST /ratings` */
+  /** The form field holding the title's link, for `POST /ratings`; a movie of the site's goes in `movieId` */
   name: string;
-  /** A title to start from (the movie on screen): searched by name, and picked if found and not rated yet */
-  suggestion?: TitleSuggestion | null;
+  /** Picked from the start (the movie on screen) */
+  initialMovie?: CurrentMovieInfo | null;
 }
 
 /** Search a title by name (TMDb, through the API) or paste its IMDb/TMDb link. */
-const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
+const TitleField = ({ id, name, initialMovie = null }: TitleFieldProps) => {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState(suggestion?.title ?? '');
-  // Until its search answers, or the visitor types something else
-  const pendingSuggestion = useRef(suggestion);
-  const [selected, setSelected] = useState<TitleResult | null>(null);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<PickedTitle | null>(initialMovie && {
+    movieId: initialMovie.id,
+    category: initialMovie.category,
+    title: initialMovie.title,
+    originalTitle: initialMovie.originalTitle,
+    year: initialMovie.year,
+    posterUrl: initialMovie.posterUrl,
+  });
   const [search, setSearch] = useState<Search | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -78,20 +87,6 @@ const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
         );
         setSearch({ term, status: 'done', results: data });
         setActiveIndex(-1);
-
-        const pending = pendingSuggestion.current;
-        if (pending && term === pending.title.trim()) {
-          pendingSuggestion.current = null;
-          const match = data.find(title => title.originalTitle === pending.originalTitle
-            && title.year === pending.year && title.category === pending.category);
-          // Already rated, or not found for sure: the list shows why, and the other titles
-          if (match && !match.ratedByMe) {
-            setSelected(match);
-            setIsOpen(false);
-          } else {
-            setIsOpen(true);
-          }
-        }
       } catch {
         if (!controller.signal.aborted) setSearch({ term, status: 'error', results: [] });
       }
@@ -159,7 +154,8 @@ const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
     }
   };
 
-  const link = selected?.url ?? (isLink ? query.trim() : '');
+  const link = selected ? ('url' in selected ? selected.url : '') : (isLink ? query.trim() : '');
+  const movieId = selected && 'movieId' in selected ? String(selected.movieId) : '';
   const showList = isOpen && canSearch;
 
   // The list lives in <body>, outside the modal (which scrolls its content), placed against the input: as wide, below
@@ -195,6 +191,7 @@ const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
   return (
     <div className={`${classes.titleField} ${showList ? classes.isOpen : ''} ${isAbove ? classes.isAbove : ''}`}>
       <input type="hidden" name={name} value={link} />
+      <input type="hidden" name="movieId" value={movieId} />
       {selected ? (
         <div className={classes.selected}>
           <Poster title={selected} />
@@ -223,7 +220,6 @@ const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
           placeholder="Digite o nome ou cole o link do IMDb/TMDb..."
           value={query}
           onChange={(evt) => {
-            pendingSuggestion.current = null;
             setQuery(evt.target.value);
             setIsOpen(true);
           }}
@@ -289,7 +285,7 @@ const TitleField = ({ id, name, suggestion = null }: TitleFieldProps) => {
 };
 
 /** "Filme · 1999 · The Matrix" (the original title only when it differs) */
-const describe = (title: TitleResult) => [
+const describe = (title: PickedTitle | TitleResult) => [
   CATEGORY_NAMES[title.category],
   title.year,
   title.originalTitle !== title.title ? title.originalTitle : null,
@@ -314,7 +310,7 @@ const highlight = (text: string, term: string) => {
   );
 };
 
-const Poster = ({ title }: { title: TitleResult }) => (
+const Poster = ({ title }: { title: PickedTitle | TitleResult }) => (
   title.posterUrl
     ? <Image src={title.posterUrl} alt="" width={34} height={51} className={classes.poster} />
     : <div className={classes.poster} />

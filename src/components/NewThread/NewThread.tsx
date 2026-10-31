@@ -18,10 +18,13 @@ const NewThread = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [rating, setRating] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isAuthenticated, loading, openLogin } = useAuth();
+  const {
+    user, isAuthenticated, loading, openLogin,
+  } = useAuth();
   const { showToast } = useToast();
-  // On a movie's page, the form starts from that movie
+  // On a movie's page, the form starts from that movie, unless it's rated already
   const currentMovie = useCurrentMovie();
+  const startMovie = currentMovie && user && !currentMovie.raterIds.includes(user.id) ? currentMovie : null;
 
   const showModal = () => {
     setRating('');
@@ -33,7 +36,8 @@ const NewThread = () => {
   const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
     const form = new FormData(evt.currentTarget);
-    if (!form.get('url')) {
+    const movieId = form.get('movieId');
+    if (!form.get('url') && !movieId) {
       showToast({
         type: 'error',
         title: 'Ops!',
@@ -48,7 +52,8 @@ const NewThread = () => {
       const { movie } = await apiFetch<{ movie: { id: number; slug: string } }>('/ratings', {
         method: 'POST',
         body: JSON.stringify({
-          url: form.get('url'),
+          // A movie of the site's own, or a TMDb/IMDb link
+          ...(movieId ? { movieId: Number(movieId) } : { url: form.get('url') }),
           rating: form.get('rating'),
           comment: form.get('comment'),
         }),
@@ -90,7 +95,7 @@ const NewThread = () => {
           <form onSubmit={handleSubmit}>
             <div className={classes.field}>
               <label htmlFor="url">Filme/Série *</label>
-              <TitleField id="url" name="url" suggestion={currentMovie} />
+              <TitleField id="url" name="url" initialMovie={startMovie} />
             </div>
             <div className={classes.field}>
               <label htmlFor="rating">Avaliação *</label>

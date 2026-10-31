@@ -60,7 +60,7 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
       rating: RATER_RATINGS[rater],
       comment: rater === BRUNO ? 'Bom demais' : null,
       createdAt: `2026-10-0${n + 1}T12:00:00.000Z`,
-      user: { name: people.find(p => p.id === rater)!.name, avatarUrl: null },
+      user: { id: rater, name: people.find(p => p.id === rater)!.name, avatarUrl: null },
     })),
   };
 });
@@ -122,28 +122,11 @@ const titles: TitleResult[] = [
     posterUrl: null,
     ratedByMe: false,
   },
-  // Two of the movies above, for "Nova indicação" on their pages: the signed-in user rated every 4th id
-  {
-    url: 'https://www.themoviedb.org/movie/10010',
-    category: 'movie',
-    title: 'Filme 10',
-    originalTitle: 'Movie 10',
-    year: 2010,
-    posterUrl: null,
-    ratedByMe: false,
-  },
-  {
-    url: 'https://www.themoviedb.org/movie/10008',
-    category: 'movie',
-    title: 'Filme 8',
-    originalTitle: 'Movie 8',
-    year: 2008,
-    posterUrl: null,
-    ratedByMe: true,
-  },
 ];
 
-const user: User = { name: 'Usuário E2E', email: 'e2e@example.com', avatarUrl: null };
+const user: User = {
+  id: ME, name: 'Usuário E2E', email: 'e2e@example.com', avatarUrl: null,
+};
 
 const summary = (movie: MovieDetail): MovieSummary => ({
   id: movie.id,
@@ -232,7 +215,15 @@ Bun.serve({
 
     if (route === 'POST /ratings') {
       if (!signedIn(req)) return problem(req, 401, 'Faça login para continuar.');
-      const body = (await req.json()) as { url?: string };
+      const body = (await req.json()) as { url?: string; movieId?: number };
+      if ((body.url === undefined) === (body.movieId === undefined)) return problem(req, 422, 'Informe o título.');
+      if (body.movieId !== undefined) {
+        // A movie of the site's own
+        const movie = movies.find(m => m.id === body.movieId);
+        if (!movie) return problem(req, 404, 'Título não encontrado.');
+        if (movie.ratings.some(r => r.user.id === ME)) return problem(req, 409, 'Você já avaliou esse filme.');
+        return json(req, { movie: { id: movie.id, slug: movie.slug } }, 201);
+      }
       if (!/themoviedb\.org\/(movie|tv)\//.test(body.url ?? '')) return problem(req, 422, 'Link do IMDb ou do TMDb inválido.');
       return json(req, { movie: { id: 1, slug: 'movie-1' } }, 201);
     }

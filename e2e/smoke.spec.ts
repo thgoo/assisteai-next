@@ -172,7 +172,7 @@ test('on phones "Nova indicação" floats at the bottom right, on every page', a
   }
 
   await button.click();
-  await expect(page.getByLabel('Filme/Série *')).toBeVisible();
+  await expect(page.getByLabel('Avaliação *')).toBeVisible();
 });
 
 test('on wide screens "Nova indicação" docks at the bottom right once the header scrolls away', async ({ page, context }) => {

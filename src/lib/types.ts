@@ -26,7 +26,7 @@ export interface Rating {
   rating: RatingKey;
   comment: string | null;
   createdAt: string;
-  user: { name: string; avatarUrl: string | null };
+  user: { id: number; name: string; avatarUrl: string | null };
 }
 
 export interface MovieDetail extends MovieSummary {
@@ -42,6 +42,7 @@ export interface Page<T> {
 }
 
 export interface User {
+  id: number;
   name: string;
   email: string;
   avatarUrl: string | null;
