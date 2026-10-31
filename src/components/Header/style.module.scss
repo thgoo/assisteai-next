@@ -1,7 +1,10 @@
 .header {
   position: relative;
   width: 100%;
+  // Below the status bar on iPhones (the backdrop goes under it, see the layout's viewport)
+  box-sizing: content-box;
   height: 96px;
+  padding-top: env(safe-area-inset-top, 0px);
   z-index: 2;
 
   > div {

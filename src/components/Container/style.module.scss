@@ -10,8 +10,9 @@
 
 @media screen and (min-width: 600px) {
   .container {
-    padding-left: 24px;
-    padding-right: 24px;
+    // Clear of the notch on iPhones turned sideways
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
   }
 }
 

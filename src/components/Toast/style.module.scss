@@ -1,7 +1,7 @@
 .toast {
   position: fixed;
   right: 1.5em;
-  bottom: 1.5em;
+  bottom: calc(1.5em + env(safe-area-inset-bottom, 0px));
   display: flex;
   padding: 1.25em 1.5em 1.1em;
   border-radius: 4px;
