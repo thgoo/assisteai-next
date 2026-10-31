@@ -1,6 +1,6 @@
 import { getImageProps } from 'next/image';
 
-/** The posters' `sizes`: the preload must pick the same file from the srcset as the card */
+/** The posters' `sizes`: the preload and the movie page must pick the same file from the srcset as the card */
 export const POSTER_SIZES = '(min-width: 768px) 260px, 50vw';
 
 /** Loads posters into the browser's cache; resolves when all have loaded or failed, or after `timeoutMs`. */

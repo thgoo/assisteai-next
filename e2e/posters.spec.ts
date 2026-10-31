@@ -184,3 +184,33 @@ test('"Voltar" flies the poster back to a filtered list', async ({ page }) => {
   await expect(card(page, 27)).toBeInViewport();
   await expect.poll(transitions).toEqual([['::view-transition-group(poster-27)'], ['::view-transition-group(poster-27)']]);
 });
+
+// Phones of several widths and pixel densities, and a desktop
+for (const screen of [
+  { width: 390, height: 844, deviceScaleFactor: 3 },
+  { width: 430, height: 932, deviceScaleFactor: 3 },
+  { width: 412, height: 915, deviceScaleFactor: 2.625 },
+  { width: 1280, height: 720, deviceScaleFactor: 1 },
+]) {
+  test(`the movie page picks the card's poster file, already in the cache (${screen.width}px @${screen.deviceScaleFactor}x)`, async ({ browser }) => {
+    // The file each page picks on its own: Chrome would reuse the card's (larger) file, Safari downloads its pick again
+    const pickedFile = async (url: string, image: (page: Page) => ReturnType<Page['locator']>) => {
+      const context = await browser.newContext({
+        viewport: { width: screen.width, height: screen.height }, deviceScaleFactor: screen.deviceScaleFactor,
+      });
+      const page = await context.newPage();
+      servePosters(page, 'hold')();
+      await page.goto(url);
+      if (url === '/') await page.mouse.wheel(0, 100_000);
+      await image(page).scrollIntoViewIfNeeded();
+      await expect.poll(() => image(page).evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+      const file = await image(page).evaluate((img: HTMLImageElement) => img.currentSrc);
+      await context.close();
+      return file;
+    };
+
+    const cardFile = await pickedFile('/', page => card(page, 25).locator('img'));
+    const pageFile = await pickedFile('/movies/25-movie-25', page => page.locator('[class*="_posterImage"]'));
+    expect(pageFile).toBe(cardFile);
+  });
+}
