@@ -93,7 +93,7 @@ const MovieFilters = () => {
           label="Gênero"
           value={filters.genre}
           emptyLabel="Todos os gêneros"
-          options={(genres?.data ?? []).map(({ name }) => ({ value: name, label: genreLabel(name) }))
+          options={genres?.data.map(({ name }) => ({ value: name, label: genreLabel(name) }))
             .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))}
           onChange={genre => set({ genre })}
         />
@@ -102,7 +102,7 @@ const MovieFilters = () => {
           label="Quem avaliou"
           value={filters.ratedBy}
           emptyLabel="Avaliados por todos"
-          options={(users?.data ?? []).map(({ id, name }) => ({ value: String(id), label: `Avaliados por ${name}` }))}
+          options={users?.data.map(({ id, name }) => ({ value: String(id), label: `Avaliados por ${name}` }))}
           onChange={ratedBy => set({ ratedBy })}
         />
         {isAuthenticated ? (
@@ -241,7 +241,8 @@ interface FilterSelectProps<T extends string> {
   value: T | null;
   /** The option meaning "no filter" */
   emptyLabel: string;
-  options: { value: T; label: string }[];
+  /** Undefined while they load */
+  options: { value: T; label: string }[] | undefined;
   onChange: (value: T | null) => void;
   /** Not a filter (the sort): never highlighted as active */
   neutral?: boolean;
@@ -249,20 +250,25 @@ interface FilterSelectProps<T extends string> {
 
 const FilterSelect = <T extends string>({
   label, value, emptyLabel, options, onChange, neutral = false,
-}: FilterSelectProps<T>) => (
-  <div className={`${classes.select} ${value && !neutral ? classes.isActive : ''}`}>
-    <select
-      aria-label={label}
-      value={value ?? ''}
-      onChange={evt => onChange((evt.target.value || null) as T | null)}
-    >
-      <option value="">{emptyLabel}</option>
-      {/* A value from the URL the list doesn't offer (yet) still shows */}
-      {value && !options.some(option => option.value === value) ? <option value={value}>{value}</option> : null}
-      {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-    </select>
-    <ChevronDown className={classes.chevron} />
-  </div>
-);
+}: FilterSelectProps<T>) => {
+  // The URL's value only once its option has loaded: its raw value (a person's id) means nothing to read
+  const shown = options ? value : null;
+
+  return (
+    <div className={`${classes.select} ${shown && !neutral ? classes.isActive : ''}`}>
+      <select
+        aria-label={label}
+        value={shown ?? ''}
+        onChange={evt => onChange((evt.target.value || null) as T | null)}
+      >
+        <option value="">{emptyLabel}</option>
+        {/* A value from the URL the list doesn't offer still shows */}
+        {shown && !options?.some(option => option.value === shown) ? <option value={shown}>{shown}</option> : null}
+        {options?.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <ChevronDown className={classes.chevron} />
+    </div>
+  );
+};
 
 export default MovieFilters;

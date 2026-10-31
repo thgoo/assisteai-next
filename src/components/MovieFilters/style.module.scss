@@ -1,9 +1,10 @@
-@use 'sass:color';
-
-// Tones of the site's fields and buttons (NewThread's form, .button-alt)
-$field: #292b2f;
-$chip: #2f3136;
+// See-through, like the active filters' blue: the backdrop shows through every field and chip of the bar
+$field: rgba(255, 255, 255, 0.05);
+$chip: rgba(255, 255, 255, 0.07);
+$chip-hover: rgba(255, 255, 255, 0.11);
 $blue: #4d69b4;
+// Solid, where text sits on the page's background rather than on the backdrop (native options)
+$option: #292b2f;
 
 .movieFilters {
   display: flex;
@@ -49,7 +50,7 @@ $blue: #4d69b4;
 
     &:focus {
       outline: 0;
-      background-color: color.adjust($field, $lightness: 2%);
+      background-color: $chip;
     }
   }
 }
@@ -123,7 +124,7 @@ $blue: #4d69b4;
   transition: background-color 0.2s, color 0.2s;
 
   &:hover {
-    background-color: color.adjust($chip, $lightness: 4%);
+    background-color: $chip-hover;
     color: #ffffff;
   }
 
@@ -237,7 +238,7 @@ $blue: #4d69b4;
     appearance: none;
 
     option {
-      background-color: $field;
+      background-color: $option;
       color: #ffffff;
     }
   }

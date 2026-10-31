@@ -240,3 +240,24 @@ test('"Voltar" on a movie opened from a link goes to the list\'s top', async ({ 
   await expect(cards(page)).toHaveCount(24);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
+
+test('a person picked in the URL shows by name, and only the default label until the names load', async ({ page }) => {
+  // The names arrive only when the test says so
+  let sendNames = () => {};
+  const namesSent = new Promise<void>((resolve) => {
+    sendNames = resolve;
+  });
+  await page.route('**/users', async (route) => {
+    await namesSent;
+    await route.continue();
+  });
+  await page.goto('/?ratedBy=2');
+  const select = page.getByLabel('Quem avaliou');
+
+  await expect(select).toBeVisible();
+  await expect(select.locator('option:checked')).toHaveText('Avaliados por todos');
+  expect(await select.locator('option').allTextContents()).not.toContain('2');
+
+  sendNames();
+  await expect(select.locator('option:checked')).toHaveText('Avaliados por Bruno');
+});
