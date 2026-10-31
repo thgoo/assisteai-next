@@ -237,3 +237,36 @@ test('a movie opens from its card without waiting for the server, already on the
   expect(asked).toEqual([]);
   await context.close();
 });
+
+test('on phones the poster flies by transform alone, not by resizing every frame', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  servePosters(page, 'hold')();
+  await page.addInitScript(() => {
+    const w = window as unknown as { sizes: string[][] };
+    w.sizes = [];
+    const start = document.startViewTransition.bind(document);
+    document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
+      const transition = start(update);
+      // After React's onShare, which runs on `ready` too
+      transition.ready.then(() => setTimeout(() => w.sizes.push(document.getAnimations()
+        .filter(animation => (animation.effect as KeyframeEffect).pseudoElement?.startsWith('::view-transition-group(poster-'))
+        .flatMap(animation => (animation.effect as KeyframeEffect).getKeyframes().map(frame => `${String(frame.width)}×${String(frame.height)}`)))), () => {});
+      return transition;
+    }) as typeof document.startViewTransition;
+  });
+  await loadSecondPage(page);
+  await card(page, 25).scrollIntoViewIfNeeded();
+
+  await card(page, 25).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Movie 25');
+  await page.getByRole('link', { name: 'Voltar' }).click();
+  await expect(card(page, 25)).toBeInViewport();
+
+  const sizes = () => page.evaluate(() => (window as unknown as { sizes: string[][] }).sizes);
+  await expect.poll(async () => (await sizes()).length).toBe(2);
+  // The card and the movie page's poster differ in size on phones; each flight keeps one size from start to end
+  for (const flight of await sizes()) {
+    expect(flight).toHaveLength(2);
+    expect(flight[0]).toBe(flight[1]);
+  }
+});

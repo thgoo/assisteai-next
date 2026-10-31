@@ -1,6 +1,7 @@
-import { useCallback, useState, ViewTransition } from 'react';
+import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
+import PosterTransition from '../../PosterTransition/PosterTransition';
 import type { Category, MovieSummary } from '@/lib/types';
 import { POSTER_SIZES } from './posters';
 import classes from './style.module.scss';
@@ -40,7 +41,7 @@ const Movie = ({ movie, isOpening = false, onPosterSettled }: MovieProps) => {
   return (
     // The same name as the movie page's poster: navigating between them, the card (frame and poster) flies from one
     // place to the other
-    <ViewTransition name={`poster-${movie.id}`} share="poster" default="none">
+    <PosterTransition id={movie.id}>
       <div
         className={`${classes.movie} ${posterStatus === 'loading' ? classes.isLoading : ''} ${
           isOpening ? classes.isOpening : ''}`}
@@ -78,7 +79,7 @@ const Movie = ({ movie, isOpening = false, onPosterSettled }: MovieProps) => {
           </div>
         </div>
       </div>
-    </ViewTransition>
+    </PosterTransition>
   );
 };
 

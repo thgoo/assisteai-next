@@ -1,4 +1,3 @@
-import { ViewTransition } from 'react';
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
 import type { MovieDetail } from '@/lib/types';
@@ -6,6 +5,7 @@ import Avatar from '../Avatar/Avatar';
 import Backdrop from '../Backdrop/Backdrop';
 import { CurrentMovie } from '../CurrentMovie/CurrentMovie';
 import Container from '../Container/Container';
+import PosterTransition from '../PosterTransition/PosterTransition';
 import { POSTER_SIZES } from '../MovieList/Movie/posters';
 import BackToList from './BackToList';
 import Genres from './Genres/Genres';
@@ -32,7 +32,7 @@ const MovieDetails = ({ movie }: { movie: MovieDetail }) => (
         <div className={classes.posterWrapper}>
           {/* The same name as the list card's poster: navigating between them, the poster flies from one to the other,
               its frame included (an empty frame would wait for it) */}
-          <ViewTransition name={`poster-${movie.id}`} share="poster" default="none">
+          <PosterTransition id={movie.id}>
             <div className={`${classes.poster} magic-border`}>
               {/* The card's `sizes`, though smaller here: the same file from the srcset, already in the cache when the
                   poster flies in from the list (another one would load again over it) */}
@@ -40,7 +40,7 @@ const MovieDetails = ({ movie }: { movie: MovieDetail }) => (
                 <Image src={movie.posterUrl} alt="" fill sizes={POSTER_SIZES} priority className={classes.posterImage} />
               ) : null}
             </div>
-          </ViewTransition>
+          </PosterTransition>
         </div>
         <div className={classes.title}>
           <h1>

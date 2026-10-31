@@ -220,6 +220,18 @@ body {
 ::view-transition-group(.poster) {
   animation-duration: 320ms;
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  // PosterTransition scales it from here; the browser's own transforms only move it, so this changes nothing else
+  transform-origin: 0 0;
+}
+
+// Both ends show the same poster: only the destination's flies, without blending two images on every frame
+::view-transition-old(.poster) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(.poster) {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
