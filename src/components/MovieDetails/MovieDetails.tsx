@@ -1,7 +1,9 @@
 import Image from 'next/image';
 import { ratingLabel } from '@/lib/ratings';
 import type { MovieDetail } from '@/lib/types';
+import Avatar from '../Avatar/Avatar';
 import Backdrop from '../Backdrop/Backdrop';
+import { CurrentMovie } from '../CurrentMovie/CurrentMovie';
 import Container from '../Container/Container';
 import Genres from './Genres/Genres';
 import RatingSummary from './RatingSummary/RatingSummary';
@@ -9,6 +11,12 @@ import classes from './style.module.scss';
 
 const MovieDetails = ({ movie }: { movie: MovieDetail }) => (
   <div className={`${classes.movieDetails} ${movie.backdropUrl ? '' : classes.hasNoBackdrop}`}>
+    <CurrentMovie
+      title={movie.title}
+      originalTitle={movie.originalTitle}
+      year={movie.year}
+      category={movie.category}
+    />
     <Backdrop backdrop={movie.backdropUrl} />
     <Container maxWidth="lg">
       <div className={classes.content}>
@@ -36,18 +44,23 @@ const MovieDetails = ({ movie }: { movie: MovieDetail }) => (
           <h3 className={classes.titleSection}>Avaliações</h3>
           <div className={classes.ratingList}>
             {movie.ratings.map(userRating => (
-              <div className={classes.ratingWrapper} key={userRating.id}>
+              <div
+                className={`${classes.ratingWrapper} ${userRating.comment ? classes.hasComment : ''}`}
+                key={userRating.id}
+              >
                 <div className={classes.userWrapper}>
-                  {userRating.user.avatarUrl ? (
-                    // Google avatars, already small
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={userRating.user.avatarUrl} alt="Avatar usuário" className={classes.userAvatar} />
-                  ) : null}
+                  <Avatar
+                    name={userRating.user.name}
+                    url={userRating.user.avatarUrl}
+                    size={42}
+                    className={classes.userAvatar}
+                  />
                   <div className={classes.userDetail}>
                     <div className={classes.userName}>{userRating.user.name}</div>
                     <div className={classes.number}>{ratingLabel(userRating.rating)}</div>
                   </div>
                 </div>
+                {userRating.comment ? <p className={classes.comment}>{userRating.comment}</p> : null}
               </div>
             ))}
           </div>

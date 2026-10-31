@@ -140,6 +140,13 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       background-color: rgb(68, 68, 68, 0.1);
 
+      // Room for the text
+      &.hasComment {
+        flex-basis: 240px;
+        width: auto;
+        max-width: 360px;
+      }
+
       .userWrapper {
         display: flex;
         flex-direction: column;
@@ -147,13 +154,8 @@
         align-items: center;
         gap: 0.3rem;
         .userAvatar {
-          width: 42px;
-          height: 42px;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
           border-radius: 50%;
-          background-size: cover;
-          background-position: center;
-          overflow: hidden;
         }
         .userDetail {
           display: flex;
@@ -170,6 +172,21 @@
             opacity: .5;
           }
         }
+      }
+
+      .comment {
+        width: 100%;
+        margin: 1.2rem 0 0;
+        padding-top: 1.2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 1.3rem;
+        font-style: italic;
+        line-height: 1.5;
+        text-align: center;
+        // Long words (links) wrap instead of widening the card
+        overflow-wrap: anywhere;
+        white-space: pre-line;
+        opacity: 0.85;
       }
     }
   }
@@ -218,5 +235,10 @@
     min-width: 0;
     max-width: none;
     padding: 1.5rem 1rem;
+
+    &.hasComment {
+      flex-basis: 100%;
+      max-width: none;
+    }
   }
 }
