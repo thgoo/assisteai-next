@@ -299,3 +299,51 @@ test('a page loaded with filters shows the bar as it starts, then as it ends, no
   const states = await page.evaluate(() => (window as unknown as { barStates: string[] }).barStates);
   expect(states, states.join('\n')).toHaveLength(2);
 });
+
+test('a movie rated while searching for it is in the list once the filters are cleared, too', async ({ page, context }) => {
+  await context.addCookies([{
+    name: 'session', value: 'e2e', domain: 'localhost', path: '/',
+  }]);
+  // After the rating, the API knows the movie: the browser's list requests get it (the server's first page, rendered
+  // before, doesn't)
+  const vendetta = {
+    id: 999,
+    slug: 'v-for-vendetta',
+    category: 'movie',
+    title: 'V de Vingança',
+    originalTitle: 'V for Vendetta',
+    year: 2005,
+    posterUrl: null,
+    rating: { count: 1, average: 'UNMISSABLE', last: 'UNMISSABLE' },
+  };
+  let rated = false;
+  await page.route(/\/movies(\?|$)/, async (route) => {
+    const url = new URL(route.request().url());
+    if (!rated || url.port === '3010' || url.searchParams.has('cursor')) {
+      await route.continue();
+      return;
+    }
+    const q = url.searchParams.get('q');
+    const response = await route.fetch();
+    const page = await response.json() as { data: unknown[]; nextCursor: string | null };
+    if (!q || 'v for vendetta'.includes(q.toLowerCase())) page.data.unshift(vendetta);
+    await route.fulfill({ response, json: page });
+  });
+  await page.goto('/');
+  await expect(page.locator('a[href="/movies/1-movie-1"]')).toBeVisible();
+
+  await page.getByRole('searchbox').fill('Vendetta');
+  await expect(page.getByText('Nenhum filme encontrado')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+  await page.getByLabel('Filme/Série *').fill('https://www.themoviedb.org/movie/752');
+  await page.getByLabel('Avaliação *').selectOption('UNMISSABLE');
+  rated = true;
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  const card = page.locator('a[href="/movies/999-v-for-vendetta"]');
+  await expect(card).toBeVisible();
+
+  await page.getByRole('button', { name: 'Limpar filtros' }).first().click();
+  await expect(page.locator('a[href="/movies/1-movie-1"]')).toBeVisible();
+  await expect(card).toBeVisible();
+});

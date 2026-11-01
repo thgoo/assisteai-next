@@ -1,9 +1,10 @@
 'use client';
 
 import {
-  createContext, useCallback, useContext, useEffect, useMemo,
+  createContext, useCallback, useContext, useEffect, useMemo, useState,
 } from 'react';
-import useSWRInfinite from 'swr/infinite';
+import { useSWRConfig } from 'swr';
+import useSWRInfinite, { unstable_serialize as infiniteKey } from 'swr/infinite';
 import { ApiError } from '@/lib/api';
 import { filtersToQuery } from '@/lib/filters';
 import type { MovieSummary, Page } from '@/lib/types';
@@ -24,6 +25,9 @@ export const MOVIES_CHANGED_EVENT = 'movieschange';
 
 const MovieListContext = createContext<MovieListContextValue | null>(null);
 
+// SWR's cache keys of movie lists: their pages ("/movies?…") and the lists themselves ("$inf$/movies?…")
+const isMovieListKey = (key: unknown) => typeof key === 'string' && /^(\$inf\$)?\/movies(\?|$)/.test(key);
+
 interface MovieListProviderProps {
   children: React.ReactNode;
   /** The first page, rendered on the server */
@@ -35,6 +39,9 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
   const { isAuthenticated } = useAuth();
   // "Only the ones I haven't rated" needs a session (the API answers 401 without one)
   const query = filtersToQuery({ ...filters, unratedByMe: filters.unratedByMe && isAuthenticated });
+  const { mutate: mutateCache } = useSWRConfig();
+  // The server's first page predates a rating made here
+  const [isFirstPageStale, setIsFirstPageStale] = useState(false);
 
   const getKey = useCallback((pageIndex: number, previousPage: Page<MovieSummary> | null) => {
     if (pageIndex > 0 && !previousPage?.nextCursor) return null; // reached the end
@@ -49,7 +56,7 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     data, error, mutate, size, setSize, isValidating,
   } = useSWRInfinite<Page<MovieSummary>>(getKey, {
     // The server renders the unfiltered list only
-    fallbackData: firstPage && !query ? [firstPage] : undefined,
+    fallbackData: firstPage && !query && !isFirstPageStale ? [firstPage] : undefined,
     // No automatic refetch of a list already in the cache. SWR defers that refetch to the next frame and runs it with
     // the latest `getKey`: when the filters change in between (at hydration, or on a quick change), the old filters'
     // cache got the new filters' pages. A list without cache is fetched at once, consistently; focus and
@@ -65,11 +72,18 @@ export default function MovieListProvider({ children, firstPage }: MovieListProv
     },
   });
 
+  // A rating changes every list, not only the one on screen: the others are dropped, to load again when shown (they
+  // aren't refetched by themselves, see `revalidateIfStale`), and the one on screen reloads now
   useEffect(() => {
-    const refresh = () => mutate();
+    const refresh = () => {
+      const shown = infiniteKey(getKey);
+      mutateCache(key => isMovieListKey(key) && key !== shown, undefined, { revalidate: false });
+      setIsFirstPageStale(true);
+      mutate();
+    };
     window.addEventListener(MOVIES_CHANGED_EVENT, refresh);
     return () => window.removeEventListener(MOVIES_CHANGED_EVENT, refresh);
-  }, [mutate]);
+  }, [getKey, mutate, mutateCache]);
 
   const value = useMemo(() => ({
     pages: data,
