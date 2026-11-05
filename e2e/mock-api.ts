@@ -1,5 +1,5 @@
 // A stand-in for the API (../assisteai-api) with fixed data, so the e2e tests need no database.
-// The shapes follow ../assisteai-back/docs/rewrite/05-api-design.md.
+// It follows the contract, ../docs/CONTRACTS.md: any difference is a mock bug.
 import type {
   MovieDetail, MovieSummary, PublicUser, RatingKey, TitleResult, User,
 } from '../src/lib/types';
@@ -33,6 +33,8 @@ people.forEach((person) => {
 const RATER_RATINGS: Record<number, RatingKey> = {
   [ANA]: 'UNMISSABLE', [BRUNO]: 'GOOD', [CARLA]: 'COOL', [ME]: 'BAD',
 };
+/** What each person gave a movie: everyone panned the "Muito Ruim" ones (ids 25–27) */
+const ratingOf = (rater: number, id: number): RatingKey => (id > 24 ? 'VERY_BAD' : RATER_RATINGS[rater]);
 
 // 27 movies: a full first page (24) and a second, last page
 const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
@@ -48,8 +50,10 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     year: 2000 + id,
     // Only the second page has posters; e2e/posters.spec.ts serves them from the browser
     posterUrl: id > PAGE_SIZE ? `https://image.tmdb.org/t/p/w500/e2e-poster-${id}.jpg` : null,
-    // The second page has backdrops too, at TMDb's paths (phones ask for a smaller size)
-    backdropUrl: id > PAGE_SIZE ? `http://localhost:${PORT}/t/p/w1280/e2e-backdrop-${id}.png` : null,
+    // The second page has backdrops too, at TMDb's paths (phones ask for a smaller size). Movie 1's is the home's
+    // random backdrop: the only movie `GET /movies/random` can draw (the others with one are rated "Muito Ruim")
+    backdropUrl: (id === 1 && `http://localhost:${PORT}/backdrop.png`)
+      || (id > PAGE_SIZE ? `http://localhost:${PORT}/t/p/w1280/e2e-backdrop-${id}.png` : null),
     rating: {
       count: raters.length,
       average: (id <= 20 && 'VERY_GOOD') || (id <= 24 && 'COOL') || 'VERY_BAD',
@@ -59,7 +63,7 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
     description: `Description of movie ${id}.`,
     ratings: raters.map((rater, n) => ({
       id: id * 10 + n,
-      rating: RATER_RATINGS[rater],
+      rating: ratingOf(rater, id),
       comment: rater === BRUNO ? 'Bom demais' : null,
       createdAt: `2026-10-0${n + 1}T12:00:00.000Z`,
       user: { id: rater, name: people.find(p => p.id === rater)!.name, avatarUrl: null },
@@ -69,23 +73,90 @@ const movies: MovieDetail[] = Array.from({ length: 27 }, (_, i) => {
 
 const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
-/** `GET /movies`' filters and sorts (the API's contract, on the fixtures) */
-function listMovies(params: URLSearchParams, signedIn: boolean): MovieDetail[] | 'unauthorized' {
-  const q = fold(params.get('q') ?? '');
-  const averages = (params.get('average') ?? '').split(',').filter(Boolean);
-  const ratedBy = params.get('ratedBy') && Number(params.get('ratedBy'));
-  if (params.get('unratedByMe') === 'true' && !signedIn) return 'unauthorized';
+const SORTS = ['recent', 'rating', 'popular'] as const;
+type Sort = typeof SORTS[number];
 
+interface ListQuery {
+  q: string;
+  category: string | null;
+  genre: string | null;
+  averages: string[];
+  ratedBy: number | null;
+  unratedByMe: boolean;
+  sort: Sort;
+  /** Where the page starts */
+  offset: number;
+}
+
+// The mock's cursors are opaque like the API's (base64url JSON) and carry their sort; inside, an offset
+const encodeCursor = (sort: Sort, offset: number) => Buffer.from(JSON.stringify({ sort, offset })).toString('base64url');
+
+function decodeCursor(cursor: string): { sort: unknown; offset: unknown } | null {
+  try {
+    const key = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+    return key && typeof key === 'object' ? key : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `GET /movies`' query, validated like the API (docs/CONTRACTS.md, "Movie list filters"): the problem's `detail` for
+ * an invalid one. Unknown params are ignored.
+ */
+function parseListQuery(params: URLSearchParams): ListQuery | string {
+  const INVALID = 'Filtro inválido.';
+  const q = params.get('q')?.trim() ?? '';
+  if (q.length > 100) return INVALID;
+  const category = params.get('category');
+  if (category !== null && category !== 'movie' && category !== 'series') return INVALID;
+  const genre = params.get('genre')?.trim() ?? null;
+  if (genre !== null && (genre.length < 1 || genre.length > 100)) return INVALID;
+  const average = params.get('average');
+  const averages = average?.trim() ? [...new Set(average.split(',').map(key => key.trim()))] : [];
+  if (averages.some(key => !RATING_KEYS.includes(key as RatingKey))) return INVALID;
+  const ratedBy = params.get('ratedBy');
+  if (ratedBy !== null && !/^[1-9][0-9]{0,14}$/.test(ratedBy)) return INVALID;
+  const unratedByMe = params.get('unratedByMe');
+  if (unratedByMe !== null && unratedByMe !== 'true') return INVALID;
+  const sort = params.get('sort') ?? 'recent';
+  if (!SORTS.includes(sort as Sort)) return INVALID;
+
+  let offset = 0;
+  const cursor = params.get('cursor');
+  if (cursor !== null) {
+    const key = decodeCursor(cursor);
+    if (key?.sort !== sort || !Number.isSafeInteger(key.offset) || (key.offset as number) <= 0) return 'Cursor inválido.';
+    offset = key.offset as number;
+  }
+
+  return {
+    q: fold(q),
+    category,
+    genre,
+    averages,
+    ratedBy: ratedBy === null ? null : Number(ratedBy),
+    unratedByMe: unratedByMe === 'true',
+    sort: sort as Sort,
+    offset,
+  };
+}
+
+/** `GET /movies`' filters and sorts (the API's contract, on the fixtures) */
+function listMovies(query: ListQuery): MovieDetail[] {
+  const {
+    q, category, genre, averages, ratedBy, unratedByMe, sort,
+  } = query;
   const found = movies.filter(movie => (
-    (!q || fold(`${movie.title} ${movie.originalTitle}`).includes(q))
-    && (!params.get('category') || movie.category === params.get('category'))
-    && (!params.get('genre') || movie.genres.includes(params.get('genre')!))
+    movie.ratings.length > 0
+    && (!q || fold(`${movie.title} ${movie.originalTitle}`).includes(q))
+    && (!category || movie.category === category)
+    && (!genre || movie.genres.includes(genre))
     && (!averages.length || averages.includes(movie.rating.average!))
     && (!ratedBy || ratersOf(movie.id).includes(ratedBy))
-    && (params.get('unratedByMe') !== 'true' || !ratersOf(movie.id).includes(ME))
+    && (!unratedByMe || !ratersOf(movie.id).includes(ME))
   ));
 
-  const sort = params.get('sort');
   if (sort === 'rating') {
     found.sort((a, b) => RATING_KEYS.indexOf(b.rating.average!) - RATING_KEYS.indexOf(a.rating.average!)
       || b.rating.count - a.rating.count || b.id - a.id);
@@ -161,6 +232,41 @@ const problem = (req: Request, status: number, detail?: string) => new Response(
   { status, headers: { ...corsHeaders(req), 'Content-Type': 'application/problem+json' } },
 );
 
+/** Ratings that make a movie worth suggesting on the home page (`GET /movies/random`) */
+const RECOMMENDED_RATINGS: RatingKey[] = ['COOL', 'GOOD', 'VERY_GOOD', 'UNMISSABLE'];
+
+// Reserved TMDb ids / IMDb ids (mock only) for `POST /ratings`' TMDb outcomes when resolving a link:
+// TMDb `/movie/404404` or IMDb `tt0404404`: TMDb doesn't know the title → 404
+// TMDb `/movie/502502` or IMDb `tt0502502`: TMDb can't be reached → 502
+const TMDB_UNKNOWN = { tmdbId: '404404', imdbId: 'tt0404404' };
+const TMDB_DOWN = { tmdbId: '502502', imdbId: 'tt0502502' };
+
+type TitleLink = { imdbId: string } | { tmdbId: string };
+
+/** The IMDb or TMDb title a `POST /ratings` link points to, or null (the API's rules) */
+function parseTitleLink(value: string): TitleLink | null {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+  if (['imdb.com', 'www.imdb.com', 'm.imdb.com'].includes(url.hostname)) {
+    const imdbId = /^\/(?:[a-z]{2}\/)?title\/(tt\d{7,10})(?:\/|$)/.exec(url.pathname)?.[1];
+    return imdbId ? { imdbId } : null;
+  }
+  if (['themoviedb.org', 'www.themoviedb.org'].includes(url.hostname)) {
+    const tmdbId = /^\/(?:movie|tv)\/(\d{1,10})(?:-[^/]*)?(?:\/|$)/.exec(url.pathname)?.[1];
+    return tmdbId ? { tmdbId } : null;
+  }
+  return null;
+}
+
+const isLinkTo = (link: TitleLink, ids: { tmdbId: string; imdbId: string }) => (
+  'imdbId' in link ? link.imdbId === ids.imdbId : link.tmdbId === ids.tmdbId
+);
+
 const signedIn = (req: Request) => (req.headers.get('Cookie') ?? '').split('; ').includes(SESSION_COOKIE);
 
 Bun.serve({
@@ -172,31 +278,36 @@ Bun.serve({
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(req) });
 
     if (route === 'GET /movies') {
-      const found = listMovies(url.searchParams, signedIn(req));
-      if (found === 'unauthorized') return problem(req, 401, 'Faça login para continuar.');
-      // The mock's cursors are offsets; anything else is like a cursor from before an API change
-      const cursor = url.searchParams.get('cursor');
-      if (cursor !== null && !/^\d+$/.test(cursor)) return problem(req, 422, 'Cursor inválido.');
-      const start = Number(cursor ?? 0);
-      const end = start + PAGE_SIZE;
+      const query = parseListQuery(url.searchParams);
+      if (typeof query === 'string') return problem(req, 422, query);
+      if (query.unratedByMe && !signedIn(req)) return problem(req, 401, 'Faça login para continuar.');
+      const found = listMovies(query);
+      const end = query.offset + PAGE_SIZE;
       return json(req, {
-        data: found.slice(start, end).map(summary),
-        nextCursor: end < found.length ? String(end) : null,
+        data: found.slice(query.offset, end).map(summary),
+        nextCursor: end < found.length ? encodeCursor(query.sort, end) : null,
       });
     }
 
     if (route === 'GET /genres') {
-      const names = [...new Set(movies.flatMap(movie => movie.genres))].sort();
-      return json(req, { data: names.map(name => ({ name, count: movies.filter(m => m.genres.includes(name)).length })) });
+      // Of rated movies only, like the list
+      const rated = movies.filter(movie => movie.ratings.length > 0);
+      const names = [...new Set(rated.flatMap(movie => movie.genres))].sort();
+      return json(req, { data: names.map(name => ({ name, count: rated.filter(m => m.genres.includes(name)).length })) });
     }
 
     if (route === 'GET /users') return json(req, { data: people });
 
-    // With a backdrop, like production (it takes space above the list, which scroll restoration depends on)
-    // A new draw every time, like production
+    // A movie with a backdrop and a COOL-or-better rating, like production (the backdrop takes space above the list,
+    // which scroll restoration depends on). The fixtures have one: each draw marks its backdrop's URL, so every call
+    // tells apart like production's new draw
     if (route === 'GET /movies/random') {
+      const candidates = movies.filter(movie => movie.backdropUrl !== null
+        && movie.ratings.some(rating => RECOMMENDED_RATINGS.includes(rating.rating)));
+      if (!candidates.length) return problem(req, 404, 'Nenhum filme para sugerir ainda.');
+      const movie = candidates[Math.floor(Math.random() * candidates.length)];
       randomDraws += 1;
-      return json(req, { ...movies[0], backdropUrl: `http://localhost:${PORT}/backdrop.png?draw=${randomDraws}` });
+      return json(req, { ...movie, backdropUrl: `${movie.backdropUrl}?draw=${randomDraws}` });
     }
 
     if (route === 'GET /backdrop.png' || /^GET \/t\/p\/w\d+\/e2e-backdrop-\d+\.png$/.test(route)) {
@@ -232,7 +343,12 @@ Bun.serve({
         if (movie.ratings.some(r => r.user.id === ME)) return problem(req, 409, 'Você já avaliou esse filme.');
         return json(req, { movie: { id: movie.id, slug: movie.slug } }, 201);
       }
-      if (!/themoviedb\.org\/(movie|tv)\//.test(body.url ?? '')) return problem(req, 422, 'Link do IMDb ou do TMDb inválido.');
+      const link = typeof body.url === 'string' ? body.url.trim() : '';
+      if (!link) return problem(req, 422, 'Informe o link do IMDb ou do TMDb.');
+      const title = parseTitleLink(link);
+      if (!title) return problem(req, 422, 'Link do IMDb ou do TMDb inválido.');
+      if (isLinkTo(title, TMDB_UNKNOWN)) return problem(req, 404, 'Não encontramos esse título no TMDb.');
+      if (isLinkTo(title, TMDB_DOWN)) return problem(req, 502, 'Não foi possível falar com o TMDb agora. Tente de novo.');
       return json(req, { movie: { id: 1, slug: 'movie-1' } }, 201);
     }
 

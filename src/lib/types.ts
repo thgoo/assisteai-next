@@ -31,7 +31,8 @@ export interface Rating {
 
 export interface MovieDetail extends MovieSummary {
   genres: string[];
-  description: string | null;
+  /** May be empty */
+  description: string;
   backdropUrl: string | null;
   ratings: Rating[];
 }

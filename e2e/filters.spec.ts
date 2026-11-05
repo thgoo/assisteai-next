@@ -347,3 +347,69 @@ test('a movie rated while searching for it is in the list once the filters are c
   await expect(page.locator('a[href="/movies/1-movie-1"]')).toBeVisible();
   await expect(card).toBeVisible();
 });
+
+// The mock API, straight (playwright.config.ts)
+const MOCK_API = 'http://localhost:3999';
+
+/** The browser's next `GET /movies` to the API */
+const listRequest = (page: Page) => page.waitForRequest((request) => {
+  const url = new URL(request.url());
+  return url.origin === MOCK_API && url.pathname === '/movies';
+});
+
+test('filter values the API would reject are dropped from a hand-edited URL', async ({ page }) => {
+  const request = listRequest(page);
+  await page.goto('/?ratedBy=0&genre=%20&category=movie');
+
+  const params = new URL((await request).url()).searchParams;
+  expect(params.get('category')).toBe('movie');
+  expect(params.has('ratedBy')).toBe(false);
+  expect(params.has('genre')).toBe(false);
+  // Movies are the ids not divisible by 3: 18
+  await expect(cards(page)).toHaveCount(18);
+  await expect(page.getByText('Não foi possível carregar a lista.')).toBeHidden();
+});
+
+test('a genre in the URL is trimmed before it reaches the API', async ({ page }) => {
+  const request = listRequest(page);
+  await page.goto('/?genre=%20Drama%20');
+
+  expect(new URL((await request).url()).searchParams.get('genre')).toBe('Drama');
+  // Dramas are the even ids
+  await expect(cards(page)).toHaveCount(13);
+});
+
+test('the mock API rejects the filters the API rejects, and ignores unknown params', async ({ request }) => {
+  for (const query of [
+    'ratedBy=0', 'ratedBy=0123', `ratedBy=${'1'.repeat(16)}`, 'genre=%20%20', `genre=${'a'.repeat(101)}`,
+    'category=film', 'sort=best', 'average=GREAT', 'average=VERY_GOOD,NOPE', 'unratedByMe=1', `q=${'a'.repeat(101)}`,
+  ]) {
+    const res = await request.get(`${MOCK_API}/movies?${query}`);
+    expect(res.status(), query).toBe(422);
+    expect((await res.json()).detail, query).toBe('Filtro inválido.');
+  }
+  for (const query of ['ratedBy=2', `ratedBy=${'9'.repeat(15)}`, 'genre=%20Drama%20', 'average=%20', 'whatever=1']) {
+    expect((await request.get(`${MOCK_API}/movies?${query}`)).status(), query).toBe(200);
+  }
+});
+
+test('the mock API\'s cursors are opaque and belong to their sort', async ({ request }) => {
+  const first = await (await request.get(`${MOCK_API}/movies?sort=popular`)).json() as { nextCursor: string };
+  expect(first.nextCursor).not.toMatch(/^\d+$/);
+  expect((await request.get(`${MOCK_API}/movies?sort=popular&cursor=${first.nextCursor}`)).status()).toBe(200);
+
+  // Another sort's, an offset like the old mock's, garbage, and an edited key
+  const edited = Buffer.from(JSON.stringify({ sort: 'popular', offset: 'x' })).toString('base64url');
+  for (const query of [`cursor=${first.nextCursor}`, 'sort=popular&cursor=24', 'sort=popular&cursor=abc', `sort=popular&cursor=${edited}`]) {
+    const res = await request.get(`${MOCK_API}/movies?${query}`);
+    expect(res.status(), query).toBe(422);
+    expect((await res.json()).detail, query).toBe('Cursor inválido.');
+  }
+});
+
+test('the mock API counts genres of rated movies', async ({ request }) => {
+  const { data } = await (await request.get(`${MOCK_API}/genres`)).json() as { data: { name: string; count: number }[] };
+  expect(data).toEqual([
+    { name: 'Comedy', count: 14 }, { name: 'Drama', count: 13 }, { name: 'Sci-Fi & Fantasy', count: 27 },
+  ]);
+});

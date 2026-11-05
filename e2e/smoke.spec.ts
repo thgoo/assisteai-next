@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { MovieDetail } from '../src/lib/types';
 
 const signIn = (context: import('@playwright/test').BrowserContext) => context.addCookies([
   // The mock API's session (e2e/mock-api.ts)
@@ -132,6 +133,64 @@ test('rating errors show the API message', async ({ page, context }) => {
   await expect(page.getByText('Link do IMDb ou do TMDb inválido.')).toBeVisible();
   // The form stays open with what was typed
   await expect(page.getByLabel('Filme/Série *')).toHaveValue('https://example.com/movie');
+});
+
+// Mock-only TMDb ids (e2e/mock-api.ts): TMDb doesn't know the title, or can't be reached
+for (const { status, link, detail } of [
+  { status: 404, link: 'https://www.themoviedb.org/movie/404404', detail: 'Não encontramos esse título no TMDb.' },
+  { status: 502, link: 'https://www.imdb.com/title/tt0502502/', detail: 'Não foi possível falar com o TMDb agora. Tente de novo.' },
+]) {
+  test(`a rating whose link TMDb can't resolve (${status}) shows the API message`, async ({ page, context }) => {
+    await signIn(context);
+    await page.goto('/');
+    const answer = page.waitForResponse(res => res.url().endsWith('/ratings') && res.request().method() === 'POST');
+
+    await page.getByRole('button', { name: 'Nova indicação' }).click();
+    await page.getByLabel('Filme/Série *').fill(link);
+    await page.getByLabel('Avaliação *').selectOption('GOOD');
+    await page.getByRole('button', { name: 'Enviar' }).click();
+
+    expect((await answer).status()).toBe(status);
+    await expect(page.getByText(detail)).toBeVisible();
+    await expect(page.getByLabel('Filme/Série *')).toHaveValue(link);
+  });
+}
+
+test('signed-in users rate a movie by its IMDb link', async ({ page, context }) => {
+  await signIn(context);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Nova indicação' }).click();
+  await page.getByLabel('Filme/Série *').fill('https://www.imdb.com/title/tt0133093/');
+  await page.getByLabel('Avaliação *').selectOption('UNMISSABLE');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+
+  await expect(page.getByText('Sua avaliação foi enviada com sucesso.')).toBeVisible();
+});
+
+test('the mock API answers POST /ratings like the API for every kind of link', async ({ request }) => {
+  const rate = (url: string) => request.post('http://localhost:3999/ratings', {
+    headers: { Cookie: 'session=e2e' }, data: { url, rating: 'GOOD' },
+  });
+  for (const [url, status] of [
+    ['https://www.imdb.com/title/tt0133093/', 201], ['https://m.imdb.com/pt/title/tt0133093', 201],
+    ['https://www.themoviedb.org/movie/603-matrix', 201], ['https://themoviedb.org/tv/1399', 201],
+    ['https://www.imdb.com/name/nm0000206/', 422], ['ftp://www.imdb.com/title/tt0133093/', 422],
+    ['https://www.imdb.com/title/tt0404404/', 404], ['https://www.themoviedb.org/movie/404404', 404],
+    ['https://www.imdb.com/title/tt0502502/', 502], ['https://www.themoviedb.org/movie/502502', 502],
+  ] as const) {
+    const res = await rate(url);
+    expect(res.status(), url).toBe(status);
+    if (status === 404) expect(await res.json(), url).not.toHaveProperty('errors');
+  }
+});
+
+test('the mock API\'s random movie has a backdrop and a good rating', async ({ request }) => {
+  const draw = async () => (await request.get('http://localhost:3999/movies/random')).json() as Promise<MovieDetail>;
+  const [one, two] = [await draw(), await draw()];
+  expect(one.backdropUrl).toContain('/backdrop.png');
+  expect(one.ratings.some(r => ['COOL', 'GOOD', 'VERY_GOOD', 'UNMISSABLE'].includes(r.rating))).toBe(true);
+  expect(two.backdropUrl).not.toBe(one.backdropUrl);
 });
 
 test('signed-in users log out', async ({ page, context }) => {

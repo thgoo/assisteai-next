@@ -35,17 +35,23 @@ const oneOf = <T extends string>(values: readonly T[], value: string | null) => 
   values.includes(value as T) ? value as T : null
 );
 
-/** Unknown or malformed values fall back to the defaults. */
+// What `GET /movies` accepts (docs/CONTRACTS.md, "Movie list filters")
+const MAX_TEXT_LENGTH = 100;
+const USER_ID = /^[1-9][0-9]{0,14}$/;
+
+/** Unknown or malformed values fall back to the defaults, so the API never gets a value it rejects. */
 export function parseFilters(search: string): MovieFilters {
   const params = new URLSearchParams(search);
   const averages = new Set((params.get('average') ?? '').split(','));
+  const genre = (params.get('genre') ?? '').trim();
   const ratedBy = params.get('ratedBy');
   return {
-    q: (params.get('q') ?? '').trim().slice(0, 100),
+    q: (params.get('q') ?? '').trim().slice(0, MAX_TEXT_LENGTH),
     category: oneOf(CATEGORIES, params.get('category')),
-    genre: params.get('genre') || null,
+    // Blank or too long: no genre (none is that long)
+    genre: genre && genre.length <= MAX_TEXT_LENGTH ? genre : null,
     averages: RATING_ORDER.filter(key => averages.has(key)),
-    ratedBy: ratedBy && /^\d+$/.test(ratedBy) ? ratedBy : null,
+    ratedBy: ratedBy && USER_ID.test(ratedBy) ? ratedBy : null,
     unratedByMe: params.get('unratedByMe') === 'true',
     sort: oneOf(SORTS, params.get('sort')) ?? 'recent',
   };
